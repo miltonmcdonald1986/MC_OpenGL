@@ -6,18 +6,9 @@
 #include <GLFW/glfw3.h>
 
 #include "GLFWCallbackFunctions.h"
+#include "GlobalState.h"
 
-
-int drawStyle = GL_TRIANGLES;
-
-
-void GlfwCallbackKey(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS)
-        drawStyle = (drawStyle == GL_TRIANGLES) ? GL_LINE_LOOP : GL_TRIANGLES;
-}
+MC_OpenGL::GlobalState globalState;
 
 
 struct WindowSize
@@ -94,22 +85,17 @@ class VAO
 class Drawable
     {
     public:
-        Drawable (const VAO &vao)
-            :   m_Mode(GL_TRIANGLES),
-                m_Vao(vao)
+        Drawable ()
+            :   m_Vao(0),
+                m_Vbo(0)
             {
             }
 
         virtual auto Draw () const -> void = 0;
 
-        auto SetDrawMode (GLenum mode) -> void
-            {
-            m_Mode = mode;
-            }
-
     protected:
-        GLenum  m_Mode;
-        VAO     m_Vao;
+        GLuint m_Vao;
+        GLuint m_Vbo;
     };
 
 
@@ -117,18 +103,24 @@ class Triangle : public Drawable
 {
 public:
     Triangle(const std::array<float, 9> &vertices)
-        :   Drawable(VAO(std::vector<float>(vertices.begin(), vertices.end()), 0, 3, GL_FLOAT, GL_FALSE, 0, nullptr))
+        :   Drawable()
     {
+        glGenVertexArrays (1, &m_Vao);
+        glBindVertexArray (m_Vao);
+
+        glGenBuffers (1, &m_Vbo);
+        glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
+        glBufferData (GL_ARRAY_BUFFER, vertices.size () * sizeof (float), vertices.data (), GL_STATIC_DRAW);
+
+        glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray (0);
     }
 
     auto Draw () const -> void
         {
-        m_Vao.Bind ();
-        glDrawArrays (m_Mode, 0, 3);        
+        glBindVertexArray (m_Vao);
+        glDrawArrays (GL_TRIANGLES, 0, 3);        
         }
-
-private:
-    std::array<float, 9> m_Vertices;
 };
 
 
@@ -167,8 +159,7 @@ auto GLFWInit (GLFWwindow* &window) -> MC_OpenGL::ErrorCode
     glViewport (0, 0, windowSize.width, windowSize.height);
     glfwSetFramebufferSizeCallback (window, MC_OpenGL::GLFWCallbackFramebufferSize);
     glfwSetKeyCallback(window, MC_OpenGL::GlfwCallbackKey);
-
-    glfwSetWindowUserPointer(window, reinterpret_cast<void*>(&drawStyle));
+    glfwSetWindowUserPointer (window, reinterpret_cast<void *>(&globalState));
 
     return MC_OpenGL::ErrorCode::NO_ERROR;
     }
@@ -188,10 +179,6 @@ int main()
             return static_cast<int>(errorCode);
         }
 
-
-
-
-
 	std::array<float, 9> vertices = { 
         -0.5f, -0.5f, 0.0f, 
          0.5f, -0.5f, 0.0f, 
@@ -199,7 +186,6 @@ int main()
     };
 
     MC_OpenGL::Triangle triangle(vertices);
-    triangle.SetDrawMode (GL_LINE_LOOP);
 
     const char *vertexShaderSource =    "#version 330 core\n"
                                         "layout (location = 0) in vec3 aPos;\n"
@@ -239,7 +225,6 @@ int main()
         return static_cast<int>(MC_OpenGL::ErrorCode::ERROR_FRAGMENT_SHADER_COMPILATION_FAILED);
         }
 
-
     GLuint ID_shaderProgram = glCreateProgram ();
     glAttachShader (ID_shaderProgram, ID_vertexShader);
     glAttachShader (ID_shaderProgram, ID_fragmentShader);
@@ -259,15 +244,6 @@ int main()
     double previousTime = glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
-        double currentTime = previousTime;
-        do
-        {
-            currentTime = glfwGetTime();
-        } while (currentTime - previousTime <= 1. / 60.);
-        previousTime = currentTime;
-
-        //processInput(window);
-
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 

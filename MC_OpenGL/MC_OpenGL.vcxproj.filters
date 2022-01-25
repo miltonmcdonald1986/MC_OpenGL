@@ -29,5 +29,8 @@
     <ClInclude Include="GLFWCallbackFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 #include "GLFWCallbackFunctions.h"
+#include "GlobalState.h"
 
 
 auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void
@@ -13,7 +14,21 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
 		glfwSetWindowShouldClose(window, true);
 	if ((key == GLFW_KEY_F2) && (action == GLFW_PRESS || action == GLFW_REPEAT))
 	{
-		int *drawStyle = reinterpret_cast<int *>(glfwGetWindowUserPointer(window));
-		*drawStyle = (*drawStyle == GL_TRIANGLES ? GL_LINE_LOOP : GL_TRIANGLES);
+        MC_OpenGL::GlobalState *globalState = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+        switch (globalState->polygonMode)
+            {
+            case GL_POINT:
+                globalState->polygonMode = GL_LINE;
+                break;
+            case GL_LINE:
+            default:
+                globalState->polygonMode = GL_FILL;
+                break;
+            case GL_FILL:
+                globalState->polygonMode = GL_POINT;
+                break;
+            }
+
+        glPolygonMode (GL_FRONT_AND_BACK, globalState->polygonMode);
 	}
 }
