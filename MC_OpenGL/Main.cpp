@@ -42,33 +42,93 @@ enum class ErrorCode
     };
 
 
-class Triangle
+class VAO
+    {
+    public:
+        VAO(const std::vector<float> &data, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
+            :   m_Data(data),
+                m_Index(index),
+                m_Size(size),
+                m_Type(type),
+                m_Normalized(normalized),
+                m_Stride(stride),
+                m_Pointer(pointer),
+                m_Vao(0),
+                m_Vbo(0)
+            {
+            glGenVertexArrays (1, &m_Vao);
+            glBindVertexArray (m_Vao);
+
+            glGenBuffers (1, &m_Vbo);
+            glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
+            glBufferData (GL_ARRAY_BUFFER, m_Data.size ()*sizeof (float), m_Data.data (), GL_STATIC_DRAW);
+
+            glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray (0);
+            }
+
+        auto Bind () const -> void
+            {
+            glBindVertexArray (m_Vao);
+            }
+
+        auto GetNumVertices () const -> GLsizei
+            {
+            return m_Data.size ()/m_Stride;
+            }
+
+
+    private:
+        std::vector<float>  m_Data;
+        GLuint              m_Index;
+        GLboolean           m_Normalized;
+        const void*         m_Pointer;
+        GLint               m_Size;
+        GLsizei             m_Stride;
+        GLenum              m_Type;
+        GLuint              m_Vao;
+        GLuint              m_Vbo;
+    };
+
+
+class Drawable
+    {
+    public:
+        Drawable (const VAO &vao)
+            :   m_Mode(GL_TRIANGLES),
+                m_Vao(vao)
+            {
+            }
+
+        virtual auto Draw () const -> void = 0;
+
+        auto SetDrawMode (GLenum mode) -> void
+            {
+            m_Mode = mode;
+            }
+
+    protected:
+        GLenum  m_Mode;
+        VAO     m_Vao;
+    };
+
+
+class Triangle : public Drawable
 {
 public:
     Triangle(const std::array<float, 9> &vertices)
-        :   m_Vao(0),
-            m_Vbo(0),
-            m_Vertices(vertices.begin(), vertices.end())
+        :   Drawable(VAO(std::vector<float>(vertices.begin(), vertices.end()), 0, 3, GL_FLOAT, GL_FALSE, 0, nullptr))
     {
-        glGenVertexArrays(1, &m_Vao);
-        glBindVertexArray(m_Vao);
-
-        glGenBuffers(1, &m_Vbo);
-
-        glBindBuffer(GL_ARRAY_BUFFER, m_Vbo);
-        glBufferData(GL_ARRAY_BUFFER, m_Vertices.size()*sizeof(float), m_Vertices.data(), GL_STATIC_DRAW);
     }
 
-    auto Draw() const -> void
-    {
-        glBindVertexArray(m_Vao);
-        glDrawArrays(drawStyle, 0, 3);
-    }
+    auto Draw () const -> void
+        {
+        m_Vao.Bind ();
+        glDrawArrays (m_Mode, 0, 3);        
+        }
 
 private:
-    GLuint m_Vao;
-    GLuint m_Vbo;
-    std::vector<float> m_Vertices;
+    std::array<float, 9> m_Vertices;
 };
 
 
@@ -139,6 +199,7 @@ int main()
     };
 
     MC_OpenGL::Triangle triangle(vertices);
+    triangle.SetDrawMode (GL_LINE_LOOP);
 
     const char *vertexShaderSource =    "#version 330 core\n"
                                         "layout (location = 0) in vec3 aPos;\n"
@@ -193,9 +254,6 @@ int main()
 
     glDeleteShader (ID_vertexShader);
     glDeleteShader (ID_fragmentShader);
-
-    glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 3*sizeof (float), (void *)0);
-    glEnableVertexAttribArray (0);
 
     // Game loop
     double previousTime = glfwGetTime();
