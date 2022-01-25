@@ -9,6 +9,7 @@ namespace MC_OpenGL {
 
 
 auto GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void;
+auto GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void;
 
 
 }

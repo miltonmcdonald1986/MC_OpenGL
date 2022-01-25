@@ -1,4 +1,6 @@
+#include <array>
 #include <iostream>
+#include <vector>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -6,10 +8,15 @@
 #include "GLFWCallbackFunctions.h"
 
 
-void processInput(GLFWwindow* window)
+int drawStyle = GL_TRIANGLES;
+
+
+void GlfwCallbackKey(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS)
+        drawStyle = (drawStyle == GL_TRIANGLES) ? GL_LINE_LOOP : GL_TRIANGLES;
 }
 
 
@@ -33,6 +40,36 @@ enum class ErrorCode
     ERROR_SHADER_PROGRAM_LINKING_FAILED,
     ERROR_VERTEX_SHADER_COMPILATION_FAILED
     };
+
+
+class Triangle
+{
+public:
+    Triangle(const std::array<float, 9> &vertices)
+        :   m_Vao(0),
+            m_Vbo(0),
+            m_Vertices(vertices.begin(), vertices.end())
+    {
+        glGenVertexArrays(1, &m_Vao);
+        glBindVertexArray(m_Vao);
+
+        glGenBuffers(1, &m_Vbo);
+
+        glBindBuffer(GL_ARRAY_BUFFER, m_Vbo);
+        glBufferData(GL_ARRAY_BUFFER, m_Vertices.size()*sizeof(float), m_Vertices.data(), GL_STATIC_DRAW);
+    }
+
+    auto Draw() const -> void
+    {
+        glBindVertexArray(m_Vao);
+        glDrawArrays(drawStyle, 0, 3);
+    }
+
+private:
+    GLuint m_Vao;
+    GLuint m_Vbo;
+    std::vector<float> m_Vertices;
+};
 
 
 }
@@ -69,6 +106,9 @@ auto GLFWInit (GLFWwindow* &window) -> MC_OpenGL::ErrorCode
 
     glViewport (0, 0, windowSize.width, windowSize.height);
     glfwSetFramebufferSizeCallback (window, MC_OpenGL::GLFWCallbackFramebufferSize);
+    glfwSetKeyCallback(window, MC_OpenGL::GlfwCallbackKey);
+
+    glfwSetWindowUserPointer(window, reinterpret_cast<void*>(&drawStyle));
 
     return MC_OpenGL::ErrorCode::NO_ERROR;
     }
@@ -92,21 +132,13 @@ int main()
 
 
 
-	float vertices[] = {
-	-0.5f, -0.5f, 0.0f,
-	 0.5f, -0.5f, 0.0f,
-	 0.0f,  0.5f, 0.0f
-		};
+	std::array<float, 9> vertices = { 
+        -0.5f, -0.5f, 0.0f, 
+         0.5f, -0.5f, 0.0f, 
+         0.0f,  0.5f, 0.0f 
+    };
 
-    GLuint VAO;
-    glGenVertexArrays (1, &VAO);
-    glBindVertexArray (VAO);
-
-    GLuint ID_vbo;
-    glGenBuffers (1, &ID_vbo);
-
-    glBindBuffer (GL_ARRAY_BUFFER, ID_vbo);
-    glBufferData (GL_ARRAY_BUFFER, sizeof (vertices), vertices, GL_STATIC_DRAW);
+    MC_OpenGL::Triangle triangle(vertices);
 
     const char *vertexShaderSource =    "#version 330 core\n"
                                         "layout (location = 0) in vec3 aPos;\n"
@@ -165,18 +197,26 @@ int main()
     glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 3*sizeof (float), (void *)0);
     glEnableVertexAttribArray (0);
 
-
     // Game loop
+    double previousTime = glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window);
+        double currentTime = previousTime;
+        do
+        {
+            currentTime = glfwGetTime();
+        } while (currentTime - previousTime <= 1. / 60.);
+        previousTime = currentTime;
+
+        //processInput(window);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram (ID_shaderProgram);
-        glBindVertexArray (VAO);
-        glDrawArrays (GL_TRIANGLES, 0, 3);
+
+        
+        triangle.Draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
