@@ -17,15 +17,12 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
         MC_OpenGL::GlobalState *globalState = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
         switch (globalState->polygonMode)
             {
-            case GL_POINT:
-                globalState->polygonMode = GL_LINE;
-                break;
             case GL_LINE:
             default:
                 globalState->polygonMode = GL_FILL;
                 break;
             case GL_FILL:
-                globalState->polygonMode = GL_POINT;
+                globalState->polygonMode = GL_LINE;
                 break;
             }
 
