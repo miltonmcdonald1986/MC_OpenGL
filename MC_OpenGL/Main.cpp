@@ -56,6 +56,39 @@ class Drawable
 	};
 
 
+class TriangleWithColorAttribute : public Drawable
+	{
+	public:
+		TriangleWithColorAttribute (const std::array<gte::Vector3<float>, 3> &vertices, const std::array<gte::Vector3<float>, 3> &colors)
+			{
+			glGenVertexArrays (1, &m_Vao);
+			glBindVertexArray (m_Vao);
+
+			glGenBuffers (1, &m_Vbo);
+			glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
+			const std::array<float, 18> vboVertices ({
+				vertices[0][0], vertices[0][1], vertices[0][2], colors[0][0], colors[0][1], colors[0][2],
+				vertices[1][0], vertices[1][1], vertices[1][2], colors[1][0], colors[1][1], colors[1][2],
+				vertices[2][0], vertices[2][1], vertices[2][2], colors[2][0], colors[2][1], colors[2][2]
+				});
+			glBufferData (GL_ARRAY_BUFFER, vboVertices.size ()*sizeof (float), vboVertices.data (), GL_STATIC_DRAW);
+
+			glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), nullptr);
+			glEnableVertexAttribArray (0);
+
+			glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void *)(3 * sizeof (float)));
+			glEnableVertexAttribArray (1);
+			}
+
+		auto Draw () const -> void
+			{
+			glBindVertexArray (m_Vao);
+			glDrawArrays (GL_TRIANGLES, 0, 3);
+			glBindVertexArray (0);
+			}
+	};
+
+
 class Triangle : public Drawable
 	{
 	public:
@@ -251,9 +284,19 @@ class Shader
 			return m_Id;
 			}
 
+		auto Use () const
+			{
+			glUseProgram (m_Id);
+			}
+
 		auto GetInfo () const -> std::pair<MC_OpenGL::ErrorCode, std::string>
 			{
 			return { m_ErrorCode, m_InfoLog };
+			}
+
+		auto SetUniformFloat1f (const std::string name, float value) const -> void
+			{
+			glUniform1f (glGetUniformLocation (m_Id, name.c_str ()), value);
 			}
 
 	private:
@@ -277,82 +320,58 @@ int main ()
 			return static_cast<int>(errorCode);
 		}
 
-	std::vector<float> vertices = {
-		 0.5f,  0.5f, 0.f,
-		 0.5f, -0.5f, 0.f,
-		-0.5f, -0.5f, 0.f,
-		-0.5f,  0.5f, 0.f
-		};
-
-	std::vector<int> indices = {
-		0, 1, 3,
-		1, 2, 3
-		};
-
-	MC_OpenGL::Triangles triangles (vertices, indices);
-
-
-	//   
-	//   gte::Vector3<float> v0{ 0.f,   0.5f, 0.f };
-	//   gte::Vector3<float> v1{ 1.f,   0.5f, 0.f };
-	//   gte::Vector3<float> v2{ 0.75f, 1.f,  0.f };
-	//   MC_OpenGL::Triangle triangle(v0, v1, v2);
-
-	   //std::vector<float> vertices = {
-	   //    -1.f,  1.f, 0.f,
-	   //    -1.f, -1.f, 0.f,
-	   //     0.f, -1.f, 0.f,
-	   //     0.f, -1.f, 0.f,
-	   //     1.f, -1.f, 0.f,
-	   //     1.f,  0.f, 0.f
-	   //    };
-	   //MC_OpenGL::Triangles triangles (vertices);
-
 	const char *vertexShaderSource = "#version 330 core\n"
 		"layout (location = 0) in vec3 aPos;\n"
+		"layout (location = 1) in vec3 aColor;\n"
+		"uniform float posY;\n"
+		"out vec3 ourColor;\n"
 		"void main ()\n"
 		"{\n"
-		"gl_Position = vec4 (aPos.x, aPos.y, aPos.z, 1.0);\n"
+		"gl_Position = vec4 (aPos.x + 0.5f, -1.f*(aPos.y + posY), -1.f*aPos.z, 1.f);\n"
+		"ourColor = vec3(gl_Position.x, gl_Position.y, 1.0f);\n"
 		"}\0";
 
-	const char *fragmentShaderSource1 = "#version 330 core\n"
+	const char *fragmentShaderSource = "#version 330 core\n"
 		"out vec4 FragColor;\n"
+		"in vec3 ourColor;\n"
 		"void main ()\n"
 		"{\n"
-		"FragColor = vec4 (0.f, 0.f, 1.f, 1.f);\n"
-		"}\0";
-	const char *fragmentShaderSource2 = "#version 330 core\n"
-		"out vec4 FragColor;\n"
-		"void main ()\n"
-		"{\n"
-		"FragColor = vec4 (1.f, 1.f, 0.f, 1.f);\n"
+		"FragColor = vec4(ourColor, 1.f);\n"
 		"}\0";
 
-	Shader shader1 (vertexShaderSource, fragmentShaderSource1);
-	if (!shader1)
+	Shader shader (vertexShaderSource, fragmentShaderSource);
+	if (!shader)
 		{
-		const auto &[e, i] = shader1.GetInfo ();
+		const auto &[e, i] = shader.GetInfo ();
 		std::cerr << i << '\n';
 		return static_cast<int>(e);
 		}
 
-	Shader shader2 (vertexShaderSource, fragmentShaderSource2);
-	if (!shader2)
+	MC_OpenGL::TriangleWithColorAttribute coloredTriangle (
+		{	gte::Vector3<float> ({  0.5f, -0.5f, 0.f }),
+			gte::Vector3<float> ({ -0.5f, -0.5f, 0.f }),
+			gte::Vector3<float> ({  0.f,   0.5f, 0.f }) }, 
 		{
-		const auto &[e, i] = shader2.GetInfo ();
-		std::cerr << i << '\n';
-		return static_cast<int>(e);
-		}
+			gte::Vector3<float> ({ 1.f, 0.f, 0.f }),
+			gte::Vector3<float> ({ 0.f, 1.f, 0.f }),
+			gte::Vector3<float> ({ 0.f, 0.f, 1.f })
+		});
 
 	// Game loop
 	double previousTime = glfwGetTime ();
 	while (!glfwWindowShouldClose (window))
 		{
+		float timeValue = glfwGetTime ();
+		float posY = (sin (timeValue) / 2.0f);
+		
+		std::cout << posY << '\n';
+
 		glClearColor (0.2f, 0.3f, 0.3f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT);
 
-		glUseProgram (shader2.GetProgramId ());
-		triangles.Draw ();
+		shader.Use ();
+		shader.SetUniformFloat1f ("posY", posY);
+		coloredTriangle.Draw ();
 
 		//glUseProgram (shader1.GetProgramId ());
 		//triangle.Draw ();
