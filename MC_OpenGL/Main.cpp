@@ -1,4 +1,5 @@
 #include <array>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -9,6 +10,9 @@
 
 #include <Mathematics/Triangle.h>
 #include <Mathematics/Vector3.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
@@ -34,6 +38,7 @@ enum class ErrorCode
 	ERROR_GLFW_CREATE_WINDOW,
 	ERROR_GLFW_WINDOW_IS_NULL,
 	ERROR_SHADER_PROGRAM_LINKING_FAILED,
+	ERROR_TEXTURE_FAILED_TO_LOAD,
 	ERROR_VERTEX_SHADER_COMPILATION_FAILED
 	};
 
@@ -220,20 +225,29 @@ auto GLFWInit (GLFWwindow *&window) -> MC_OpenGL::ErrorCode
 class Shader
 	{
 	public:
-		Shader (const std::string &vertexShaderSource, const std::string &fragmentShaderSource)
+		Shader (const std::string &vsFilename, const std::string &fsFilename)
 			: m_ErrorCode (MC_OpenGL::ErrorCode::NO_ERROR)
 			{
-			GLuint ID_vertexShader = glCreateShader (GL_VERTEX_SHADER);
-			const char *vertexShaderCStr = vertexShaderSource.data ();
-			glShaderSource (ID_vertexShader, 1, &vertexShaderCStr, NULL);
-			glCompileShader (ID_vertexShader);
+			std::ifstream ifs (vsFilename);
+			std::string line;
+			std::stringstream ss;
+			while (std::getline (ifs, line))
+				ss << line << '\n';
+			ss << '\0';
+			ifs.close ();
+			
+			GLuint vsId = glCreateShader (GL_VERTEX_SHADER);
+			std::string strVsSourceCode = ss.str ();
+			const char *vsSourceCode = strVsSourceCode.c_str();
+			glShaderSource (vsId, 1, &vsSourceCode, NULL);
+			glCompileShader (vsId);
 			GLint success;
 			const int infoLogSize = 512;
 			GLchar infoLog[infoLogSize];
-			glGetShaderiv (ID_vertexShader, GL_COMPILE_STATUS, &success);
+			glGetShaderiv (vsId, GL_COMPILE_STATUS, &success);
 			if (!success)
 				{
-				glGetShaderInfoLog (ID_vertexShader, infoLogSize, nullptr, infoLog);
+				glGetShaderInfoLog (vsId, infoLogSize, nullptr, infoLog);
 				std::stringstream ssInfoLog;
 				ssInfoLog << "Error: Vertex shader compilation failed\n" << infoLog << std::endl;
 				m_InfoLog = ssInfoLog.str ();
@@ -241,14 +255,22 @@ class Shader
 				return;
 				}
 
-			GLuint ID_fragmentShader = glCreateShader (GL_FRAGMENT_SHADER);
-			const char *fragmentShaderCStr = fragmentShaderSource.data ();
-			glShaderSource (ID_fragmentShader, 1, &fragmentShaderCStr, nullptr);
-			glCompileShader (ID_fragmentShader);
-			glGetShaderiv (ID_fragmentShader, GL_COMPILE_STATUS, &success);
+			ifs.open (fsFilename);
+			ss = std::stringstream ();
+			while (std::getline (ifs, line))
+				ss << line << '\n';
+			ss << '\0';
+			ifs.close ();
+			
+			GLuint fsId = glCreateShader (GL_FRAGMENT_SHADER);
+			std::string strFsSourceCode = ss.str ();
+			const char *fsSourceCode = strFsSourceCode.c_str();
+			glShaderSource (fsId, 1, &fsSourceCode, nullptr);
+			glCompileShader (fsId);
+			glGetShaderiv (fsId, GL_COMPILE_STATUS, &success);
 			if (!success)
 				{
-				glGetShaderInfoLog (ID_fragmentShader, infoLogSize, nullptr, infoLog);
+				glGetShaderInfoLog (fsId, infoLogSize, nullptr, infoLog);
 				std::stringstream ssInfoLog;
 				ssInfoLog << "Error: Fragment shader compilation failed\n" << infoLog << std::endl;
 				m_InfoLog = ssInfoLog.str ();
@@ -257,8 +279,8 @@ class Shader
 				}
 
 			m_Id = glCreateProgram ();
-			glAttachShader (m_Id, ID_vertexShader);
-			glAttachShader (m_Id, ID_fragmentShader);
+			glAttachShader (m_Id, vsId);
+			glAttachShader (m_Id, fsId);
 			glLinkProgram (m_Id);
 			glGetShaderiv (m_Id, GL_LINK_STATUS, &success);
 			if (!success)
@@ -270,8 +292,8 @@ class Shader
 				m_ErrorCode = MC_OpenGL::ErrorCode::ERROR_SHADER_PROGRAM_LINKING_FAILED;
 				}
 
-			glDeleteShader (ID_vertexShader);
-			glDeleteShader (ID_fragmentShader);
+			glDeleteShader (vsId);
+			glDeleteShader (vsId);
 			}
 
 		operator bool () const
@@ -320,26 +342,7 @@ int main ()
 			return static_cast<int>(errorCode);
 		}
 
-	const char *vertexShaderSource = "#version 330 core\n"
-		"layout (location = 0) in vec3 aPos;\n"
-		"layout (location = 1) in vec3 aColor;\n"
-		"uniform float posY;\n"
-		"out vec3 ourColor;\n"
-		"void main ()\n"
-		"{\n"
-		"gl_Position = vec4 (aPos.x + 0.5f, -1.f*(aPos.y + posY), -1.f*aPos.z, 1.f);\n"
-		"ourColor = vec3(gl_Position.x, gl_Position.y, 1.0f);\n"
-		"}\0";
-
-	const char *fragmentShaderSource = "#version 330 core\n"
-		"out vec4 FragColor;\n"
-		"in vec3 ourColor;\n"
-		"void main ()\n"
-		"{\n"
-		"FragColor = vec4(ourColor, 1.f);\n"
-		"}\0";
-
-	Shader shader (vertexShaderSource, fragmentShaderSource);
+	Shader shader (R"(..\shaders\vsContainer.glsl)", R"(..\shaders\fsContainer.glsl)");
 	if (!shader)
 		{
 		const auto &[e, i] = shader.GetInfo ();
@@ -347,31 +350,93 @@ int main ()
 		return static_cast<int>(e);
 		}
 
-	MC_OpenGL::TriangleWithColorAttribute coloredTriangle (
-		{	gte::Vector3<float> ({  0.5f, -0.5f, 0.f }),
-			gte::Vector3<float> ({ -0.5f, -0.5f, 0.f }),
-			gte::Vector3<float> ({  0.f,   0.5f, 0.f }) }, 
+	float vertices[] = {
+    // positions          // colors           // texture coords
+     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+	};
+	unsigned int indices[] = {  // note that we start from 0!
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle
+	}; 
+
+	GLuint vao;
+	glGenVertexArrays (1, &vao);
+	glBindVertexArray (vao);
+
+	GLuint vbo;
+	glGenBuffers (1, &vbo);
+	glBindBuffer (GL_ARRAY_BUFFER, vbo);
+	glBufferData (GL_ARRAY_BUFFER, 32*sizeof(float), vertices, GL_STATIC_DRAW);
+
+	GLuint ebo;
+	glGenBuffers (1, &ebo);
+	glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData (GL_ELEMENT_ARRAY_BUFFER, 6*sizeof (int), indices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+	glEnableVertexAttribArray (0);
+
+	glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof (float)));
+	glEnableVertexAttribArray (1);
+
+	glVertexAttribPointer (2, 2, GL_FLOAT, GL_FALSE, 8*sizeof (float), (void *)(6*sizeof (float)));
+	glEnableVertexAttribArray (2);
+
+	
+	// START TEXTURE STUFF
+	
+	int width, height, nrChannels;
+	unsigned char *data = stbi_load ("..\\textures\\container.jpg", &width, &height, &nrChannels, 0);
+
+	unsigned int texture;
+	glGenTextures (1, &texture);
+	glBindTexture (GL_TEXTURE_2D, texture);
+
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	if (data)
 		{
-			gte::Vector3<float> ({ 1.f, 0.f, 0.f }),
-			gte::Vector3<float> ({ 0.f, 1.f, 0.f }),
-			gte::Vector3<float> ({ 0.f, 0.f, 1.f })
-		});
+		glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap (GL_TEXTURE_2D);
+		}
+	else
+		{
+		std::cerr << "Error: failed to load texture\n";
+		return static_cast<int>(MC_OpenGL::ErrorCode::ERROR_TEXTURE_FAILED_TO_LOAD);
+		}
+
+	stbi_image_free (data);
+	// END TEXTURE STUFF
+
+	float texCoords[] = {
+		0.f,  0.f,
+		1.f,  0.f,
+		0.5f, 1.f
+		};
 
 	// Game loop
 	double previousTime = glfwGetTime ();
 	while (!glfwWindowShouldClose (window))
 		{
-		float timeValue = glfwGetTime ();
-		float posY = (sin (timeValue) / 2.0f);
-		
-		std::cout << posY << '\n';
-
 		glClearColor (0.2f, 0.3f, 0.3f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT);
 
+		glActiveTexture (GL_TEXTURE0);
+		glBindTexture (GL_TEXTURE_2D, texture);
+		glBindVertexArray (vao);
+
 		shader.Use ();
-		shader.SetUniformFloat1f ("posY", posY);
-		coloredTriangle.Draw ();
+		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerTex"), 0);
+
+		glBindVertexArray (vao);
+		glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		
 
 		//glUseProgram (shader1.GetProgramId ());
 		//triangle.Draw ();
