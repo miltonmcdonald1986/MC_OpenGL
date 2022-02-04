@@ -389,11 +389,12 @@ int main ()
 	// START TEXTURE STUFF
 	
 	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char *data = stbi_load ("..\\textures\\container.jpg", &width, &height, &nrChannels, 0);
 
-	unsigned int texture;
-	glGenTextures (1, &texture);
-	glBindTexture (GL_TEXTURE_2D, texture);
+	unsigned int texture0;
+	glGenTextures (1, &texture0);
+	glBindTexture (GL_TEXTURE_2D, texture0);
 
 	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -412,13 +413,31 @@ int main ()
 		}
 
 	stbi_image_free (data);
-	// END TEXTURE STUFF
 
-	float texCoords[] = {
-		0.f,  0.f,
-		1.f,  0.f,
-		0.5f, 1.f
-		};
+	data = stbi_load("..\\textures\\awesomeface.png", &width, &height, &nrChannels, 0);
+	unsigned int texture1;
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cerr << "Error: failed to load texture\n";
+		return static_cast<int>(MC_OpenGL::ErrorCode::ERROR_TEXTURE_FAILED_TO_LOAD);
+	}
+
+	stbi_image_free(data);
+
+	// END TEXTURE STUFF
 
 	// Game loop
 	double previousTime = glfwGetTime ();
@@ -427,14 +446,21 @@ int main ()
 		glClearColor (0.2f, 0.3f, 0.3f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT);
 
+		shader.Use();
+
+		glBindVertexArray(vao);
+
 		glActiveTexture (GL_TEXTURE0);
-		glBindTexture (GL_TEXTURE_2D, texture);
-		glBindVertexArray (vao);
+		glBindTexture (GL_TEXTURE_2D, texture0);
+		
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		
+		glUniform1i(glGetUniformLocation(shader.GetProgramId(), "samplerContainer"), 0);
+		glUniform1i(glGetUniformLocation(shader.GetProgramId(), "samplerAwesomeFace"), 1);
 
-		shader.Use ();
-		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerTex"), 0);
+		glUniform1f(glGetUniformLocation(shader.GetProgramId(), "mixPercentage"), globalState.mixPercentage);
 
-		glBindVertexArray (vao);
 		glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		
 

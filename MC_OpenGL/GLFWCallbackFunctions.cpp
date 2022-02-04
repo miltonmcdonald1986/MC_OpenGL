@@ -1,6 +1,9 @@
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
 
+#include <algorithm>
+#include <iostream>
+
 
 auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void
 	{
@@ -28,4 +31,18 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
 
         glPolygonMode (GL_FRONT_AND_BACK, globalState->polygonMode);
 	}
+    if ((key == GLFW_KEY_UP) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    {
+        MC_OpenGL::GlobalState* globalState = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+        globalState->mixPercentage += 0.02;
+        globalState->mixPercentage = std::min(globalState->mixPercentage, 1.f);
+        std::cout << globalState->mixPercentage << '\n';
+    }
+    if ((key == GLFW_KEY_DOWN) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    {
+        MC_OpenGL::GlobalState* globalState = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+        globalState->mixPercentage -= 0.02;
+        globalState->mixPercentage = std::max(globalState->mixPercentage, 0.f);
+        std::cout << globalState->mixPercentage << '\n';
+    }
 }

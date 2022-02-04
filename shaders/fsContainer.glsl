@@ -5,9 +5,11 @@ in vec2 vsOutTex;
 
 out vec4 outColor;
 
-uniform sampler2D samplerTex;
+uniform float mixPercentage;
+uniform sampler2D samplerContainer;
+uniform sampler2D samplerAwesomeFace;
 
 void main ()
 {
-	outColor = texture(samplerTex, vsOutTex);
+	outColor = mix(texture(samplerContainer, vsOutTex), texture(samplerAwesomeFace, vsOutTex), mixPercentage);
 }
