@@ -8,6 +8,10 @@
 
 #include <GLFW/glfw3.h>
 
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
+
 #include <Mathematics/Triangle.h>
 #include <Mathematics/Vector3.h>
 
@@ -440,7 +444,6 @@ int main ()
 	// END TEXTURE STUFF
 
 	// Game loop
-	double previousTime = glfwGetTime ();
 	while (!glfwWindowShouldClose (window))
 		{
 		glClearColor (0.2f, 0.3f, 0.3f, 1.0f);
@@ -455,6 +458,11 @@ int main ()
 		
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture1);
+
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
+		glUniformMatrix4fv(glGetUniformLocation(shader.GetProgramId(), "transform"), 1, GL_FALSE, glm::value_ptr(trans));
 		
 		glUniform1i(glGetUniformLocation(shader.GetProgramId(), "samplerContainer"), 0);
 		glUniform1i(glGetUniformLocation(shader.GetProgramId(), "samplerAwesomeFace"), 1);
@@ -462,10 +470,6 @@ int main ()
 		glUniform1f(glGetUniformLocation(shader.GetProgramId(), "mixPercentage"), globalState.mixPercentage);
 
 		glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		
-
-		//glUseProgram (shader1.GetProgramId ());
-		//triangle.Draw ();
 
 		glfwSwapBuffers (window);
 		glfwPollEvents ();

@@ -7,9 +7,11 @@ layout (location = 2) in vec2 attribTex;
 out vec3 vsOutCol;
 out vec2 vsOutTex;
 
+uniform mat4 transform;
+
 void main ()
 {
-	gl_Position = vec4 (attribPos, 1.f);
+	gl_Position = transform*vec4 (attribPos, 1.f);
 	vsOutCol    = attribCol;
 	vsOutTex    = attribTex;
 }
