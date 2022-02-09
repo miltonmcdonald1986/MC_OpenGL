@@ -527,11 +527,16 @@ int main ()
 			{
 			glm::mat4 model = glm::mat4 (1.f);
 			model = glm::translate (model, cubePositions[i]);
-			if (i % 3 == 0)
-				model = glm::rotate (model, i*(float)glfwGetTime ()-i * glm::radians (50.0f), glm::vec3 (0.5f, 1.0f, 0.0f));
+			//if (i % 3 == 0)
+			//	model = glm::rotate (model, i*(float)glfwGetTime ()-i * glm::radians (50.0f), glm::vec3 (0.5f, 1.0f, 0.0f));
 
 			glm::mat4 view = glm::mat4 (1.f);
-			view = glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
+			auto cameraPos = glm::vec3 (0.f, 0.f, 6.f);
+			glm::mat4 newView = glm::rotate<float> (view, glfwGetTime (), glm::vec3 (0.f, 1.f, 0.f));
+			cameraPos = newView * glm::vec4(cameraPos, 1.f);
+			auto viewDir = glm::normalize(cubePositions[0] - cameraPos);
+			auto lookAt = cameraPos + viewDir;
+			view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
 
 			glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
 
