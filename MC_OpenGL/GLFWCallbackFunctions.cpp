@@ -46,3 +46,28 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
         std::cout << globalState->mixPercentage << '\n';
     }
 }
+
+auto MC_OpenGL::GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> void
+    {
+    MC_OpenGL::GlobalState *globalState = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+    
+    double xPos;
+    double yPos;
+    glfwGetCursorPos (window, &xPos, &yPos);
+
+    globalState->cursorPosXPrev = xPos;
+    globalState->cursorPosYPrev = yPos;
+    }
+
+auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double yPos) -> void
+    {
+    MC_OpenGL::GlobalState *globalState = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+
+    globalState->cursorPosXPrev = globalState->cursorPosX;
+    globalState->cursorPosYPrev = globalState->cursorPosY;
+
+    globalState->cursorPosX = xPos;
+    globalState->cursorPosY = yPos;
+
+    std::cout << globalState->cursorPosX << ' ' << globalState->cursorPosY << ' ' << globalState->cursorPosXPrev << ' ' << globalState->cursorPosYPrev << '\n';
+    }

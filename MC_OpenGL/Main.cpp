@@ -24,6 +24,66 @@
 MC_OpenGL::GlobalState globalState;
 
 
+class Camera
+	{
+	public:
+		Camera ()
+			:	m_Eye(glm::vec3(0.f, 0.f, 3.f)),
+				m_Center(glm::vec3(0.f, 0.f, 0.f)),
+				m_Up(glm::vec3(0.f, 1.f, 0.f))
+			{
+			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
+			}
+
+		auto Update (GLFWwindow *window)
+			{
+			if (!glfwGetMouseButton (window, GLFW_MOUSE_BUTTON_MIDDLE))
+				return;
+
+			MC_OpenGL::GlobalState *gs = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+
+			double cursorDeltaX = gs->cursorPosX - gs->cursorPosXPrev;
+			double cursorDeltaY = gs->cursorPosY - gs->cursorPosYPrev;
+
+			glm::vec4 position (m_Eye, 1.f);
+			glm::vec4 pivot (m_Center, 1.f);
+
+			
+			float angleX = cursorDeltaX*2.f*glm::pi<float>()/800.f;
+			float angleY = cursorDeltaY*2.f*glm::pi<float>()/600.f;
+
+			//gs->cursorPosXDelta = 0.f;
+			//gs->cursorPosYDelta = 0.f;
+
+			float cosAngle = glm::dot (glm::vec3(-glm::transpose(m_View)[2]), m_Up);
+			if (cosAngle * -1.f*glm::sign (angleY) > 0.99f)
+				angleY = 0;
+
+			glm::mat4x4 rotationMatrixX (1.0f);
+			rotationMatrixX = glm::rotate (rotationMatrixX, -1.f*angleX, m_Up);
+			position = (rotationMatrixX * (position - pivot)) + pivot;
+
+			glm::mat4x4 rotationMatrixY (1.0f);
+			rotationMatrixY = glm::rotate (rotationMatrixY, -1.f*angleY, glm::vec3(glm::transpose (m_View)[0]));
+			m_Eye = (rotationMatrixY * (position - pivot)) + pivot;
+
+			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
+			}
+
+		auto GetView () const -> glm::mat4
+			{
+			return m_View;
+			}
+
+
+	private:
+		glm::mat4 m_View;
+		glm::vec3 m_Eye;
+		glm::vec3 m_Center;
+		glm::vec3 m_Up;
+	};
+
+
 struct WindowSize
 	{
 	unsigned int width;
@@ -220,6 +280,8 @@ auto GLFWInit (GLFWwindow *&window) -> MC_OpenGL::ErrorCode
 	glViewport (0, 0, windowSize.width, windowSize.height);
 	glfwSetFramebufferSizeCallback (window, MC_OpenGL::GLFWCallbackFramebufferSize);
 	glfwSetKeyCallback (window, MC_OpenGL::GlfwCallbackKey);
+	glfwSetCursorEnterCallback (window, MC_OpenGL::GlfwCallbackCursorEnter);
+	//glfwSetCursorPosCallback (window, MC_OpenGL::GlfwCallbackCursorPos);
 	glfwSetWindowUserPointer (window, reinterpret_cast<void *>(&globalState));
 
 	return MC_OpenGL::ErrorCode::NO_ERROR;
@@ -413,16 +475,16 @@ int main ()
 		};
 
 	glm::vec3 cubePositions[] = {
-	glm::vec3 (0.0f,  0.0f,  0.0f),
-	glm::vec3 (2.0f,  5.0f, -15.0f),
-	glm::vec3 (-1.5f, -2.2f, -2.5f),
-	glm::vec3 (-3.8f, -2.0f, -12.3f),
-	glm::vec3 (2.4f, -0.4f, -3.5f),
-	glm::vec3 (-1.7f,  3.0f, -7.5f),
-	glm::vec3 (1.3f, -2.0f, -2.5f),
-	glm::vec3 (1.5f,  2.0f, -2.5f),
-	glm::vec3 (1.5f,  0.2f, -1.5f),
-	glm::vec3 (-1.3f,  1.0f, -1.5f)
+	glm::vec3 (0.0f,  0.0f,  0.0f)
+	//glm::vec3 (2.0f,  5.0f, -15.0f),
+	//glm::vec3 (-1.5f, -2.2f, -2.5f),
+	//glm::vec3 (-3.8f, -2.0f, -12.3f),
+	//glm::vec3 (2.4f, -0.4f, -3.5f),
+	//glm::vec3 (-1.7f,  3.0f, -7.5f),
+	//glm::vec3 (1.3f, -2.0f, -2.5f),
+	//glm::vec3 (1.5f,  2.0f, -2.5f),
+	//glm::vec3 (1.5f,  0.2f, -1.5f),
+	//glm::vec3 (-1.3f,  1.0f, -1.5f)
 		};
 
 	GLuint vao;
@@ -501,12 +563,23 @@ int main ()
 	stbi_image_free(data);
 
 	// END TEXTURE STUFF
+	
+	glfwGetCursorPos (window, &globalState.cursorPosX, &globalState.cursorPosY);
+
+	Camera camera;
 
 	// Game loop
 	while (!glfwWindowShouldClose (window))
 		{
 		glClearColor (0.2f, 0.3f, 0.3f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Update Mouse BEFORE updating camera.
+		globalState.cursorPosXPrev = globalState.cursorPosX;
+		globalState.cursorPosYPrev = globalState.cursorPosY;
+		glfwGetCursorPos (window, &globalState.cursorPosX, &globalState.cursorPosY);
+
+		camera.Update (window);
 
 		shader.Use();
 
@@ -530,13 +603,13 @@ int main ()
 			//if (i % 3 == 0)
 			//	model = glm::rotate (model, i*(float)glfwGetTime ()-i * glm::radians (50.0f), glm::vec3 (0.5f, 1.0f, 0.0f));
 
-			glm::mat4 view = glm::mat4 (1.f);
-			auto cameraPos = glm::vec3 (0.f, 0.f, 6.f);
-			glm::mat4 newView = glm::rotate<float> (view, glfwGetTime (), glm::vec3 (0.f, 1.f, 0.f));
-			cameraPos = newView * glm::vec4(cameraPos, 1.f);
-			auto viewDir = glm::normalize(cubePositions[0] - cameraPos);
-			auto lookAt = cameraPos + viewDir;
-			view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
+			glm::mat4 view = camera.GetView ();// glm::mat4 (1.f);
+			//auto cameraPos = glm::vec3 (0.f, 0.f, 6.f);
+			//glm::mat4 newView = glm::rotate<float> (view, glfwGetTime (), glm::vec3 (0.f, 1.f, 0.f));
+			//cameraPos = newView * glm::vec4(cameraPos, 1.f);
+			//auto viewDir = glm::normalize(cubePositions[0] - cameraPos);
+			//auto lookAt = cameraPos + viewDir;
+			//view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
 
 			glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
 

@@ -6,8 +6,12 @@ namespace MC_OpenGL {
 
 struct GlobalState
 	{
-	int polygonMode = GL_FILL;
-	float mixPercentage = 0.f;
+	double	cursorPosX		= 0.;
+	double	cursorPosY		= 0.;
+	double	cursorPosXPrev	= 0.;
+	double	cursorPosYPrev	= 0.;
+	int		polygonMode		= GL_FILL;
+	float	mixPercentage	= 0.f;
 	};
 
 

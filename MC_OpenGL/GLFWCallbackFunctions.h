@@ -10,6 +10,8 @@ namespace MC_OpenGL {
 
 auto GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void;
 auto GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void;
+auto GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> void;
+auto GlfwCallbackCursorPos (GLFWwindow *window, double xpos, double ypos) -> void;
 
 
 }
