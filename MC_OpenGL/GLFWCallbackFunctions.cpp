@@ -68,6 +68,4 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
 
     globalState->cursorPosX = xPos;
     globalState->cursorPosY = yPos;
-
-    std::cout << globalState->cursorPosX << ' ' << globalState->cursorPosY << ' ' << globalState->cursorPosXPrev << ' ' << globalState->cursorPosYPrev << '\n';
     }

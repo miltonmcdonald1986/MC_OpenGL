@@ -30,42 +30,63 @@ class Camera
 		Camera ()
 			:	m_Eye(glm::vec3(0.f, 0.f, 3.f)),
 				m_Center(glm::vec3(0.f, 0.f, 0.f)),
-				m_Up(glm::vec3(0.f, 1.f, 0.f))
+				m_Up(glm::vec3(0.f, 1.f, 0.f)),
+				m_Right(glm::vec3(1.f, 0.f, 0.f))
 			{
+			glm::vec4 position(m_Eye, 1.f);
+			glm::vec4 pivot(m_Center, 1.f);
+
+			float angleX = 0.f;
+			float angleY = 0.f;
+
+			m_Eye = glm::rotate(glm::mat4(1.f), -1.f * angleX, m_Up) * (position - pivot) + pivot;
+			m_Right = glm::normalize(glm::cross(glm::normalize(m_Eye - m_Center), m_Up));
+
+			position = glm::vec4(m_Eye, 1.f);
+			pivot = glm::vec4(m_Center, 1.f);
+
+			m_Eye = glm::rotate(glm::mat4(1.f), 1.f * angleY, m_Right) * (position - pivot) + pivot;
+			m_Up = glm::normalize(glm::cross(glm::normalize(m_Center - m_Eye), m_Right));
+
 			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
 			}
 
 		auto Update (GLFWwindow *window)
 			{
-			if (!glfwGetMouseButton (window, GLFW_MOUSE_BUTTON_MIDDLE))
-				return;
+			MC_OpenGL::GlobalState* gs = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
 
-			MC_OpenGL::GlobalState *gs = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+			float cursorDeltaX = gs->cursorPosX - gs->cursorPosXPrev;
+			float cursorDeltaY = gs->cursorPosY - gs->cursorPosYPrev;
 
-			double cursorDeltaX = gs->cursorPosX - gs->cursorPosXPrev;
-			double cursorDeltaY = gs->cursorPosY - gs->cursorPosYPrev;
+			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+			{
+				glm::vec4 position(m_Eye, 1.f);
+				glm::vec4 pivot(m_Center, 1.f);
 
-			glm::vec4 position (m_Eye, 1.f);
-			glm::vec4 pivot (m_Center, 1.f);
+				float angleX = cursorDeltaX * 2.f * glm::pi<float>() / 800.f;
+				float angleY = cursorDeltaY * 2.f * glm::pi<float>() / 600.f;
 
-			
-			float angleX = cursorDeltaX*2.f*glm::pi<float>()/800.f;
-			float angleY = cursorDeltaY*2.f*glm::pi<float>()/600.f;
+				m_Eye = glm::rotate(glm::mat4(1.f), -1.f*angleX, m_Up)*(position - pivot) + pivot;
+				m_Right = glm::normalize(glm::cross(glm::normalize(m_Eye - m_Center), m_Up));
 
-			//gs->cursorPosXDelta = 0.f;
-			//gs->cursorPosYDelta = 0.f;
+				position = glm::vec4(m_Eye, 1.f);
+				pivot = glm::vec4(m_Center, 1.f);
 
-			float cosAngle = glm::dot (glm::vec3(-glm::transpose(m_View)[2]), m_Up);
-			if (cosAngle * -1.f*glm::sign (angleY) > 0.99f)
-				angleY = 0;
+				m_Eye = glm::rotate(glm::mat4(1.f), 1.f*angleY, m_Right)*(position - pivot) + pivot;
+				m_Up = glm::normalize(glm::cross(glm::normalize(m_Center - m_Eye), m_Right));
+			}
+			else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT))
+			{
+				float pct = cursorDeltaX / 800.f;
+				pct = pct * 16.f;
+				m_Center += pct*m_Right;
+				m_Eye += pct*m_Right;
 
-			glm::mat4x4 rotationMatrixX (1.0f);
-			rotationMatrixX = glm::rotate (rotationMatrixX, -1.f*angleX, m_Up);
-			position = (rotationMatrixX * (position - pivot)) + pivot;
-
-			glm::mat4x4 rotationMatrixY (1.0f);
-			rotationMatrixY = glm::rotate (rotationMatrixY, -1.f*angleY, glm::vec3(glm::transpose (m_View)[0]));
-			m_Eye = (rotationMatrixY * (position - pivot)) + pivot;
+				pct = cursorDeltaY/600.f;
+				pct = pct * 12.f;
+				m_Center += pct * m_Up;
+				m_Eye += pct * m_Up;
+			}
 
 			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
 			}
@@ -81,6 +102,7 @@ class Camera
 		glm::vec3 m_Eye;
 		glm::vec3 m_Center;
 		glm::vec3 m_Up;
+		glm::vec3 m_Right;
 	};
 
 
@@ -475,16 +497,16 @@ int main ()
 		};
 
 	glm::vec3 cubePositions[] = {
-	glm::vec3 (0.0f,  0.0f,  0.0f)
-	//glm::vec3 (2.0f,  5.0f, -15.0f),
-	//glm::vec3 (-1.5f, -2.2f, -2.5f),
-	//glm::vec3 (-3.8f, -2.0f, -12.3f),
-	//glm::vec3 (2.4f, -0.4f, -3.5f),
-	//glm::vec3 (-1.7f,  3.0f, -7.5f),
-	//glm::vec3 (1.3f, -2.0f, -2.5f),
-	//glm::vec3 (1.5f,  2.0f, -2.5f),
-	//glm::vec3 (1.5f,  0.2f, -1.5f),
-	//glm::vec3 (-1.3f,  1.0f, -1.5f)
+	glm::vec3 (0.0f,  0.0f,  0.0f),
+	glm::vec3 (2.0f,  5.0f, -15.0f),
+	glm::vec3 (-1.5f, -2.2f, -2.5f),
+	glm::vec3 (-3.8f, -2.0f, -12.3f),
+	glm::vec3 (2.4f, -0.4f, -3.5f),
+	glm::vec3 (-1.7f,  3.0f, -7.5f),
+	glm::vec3 (1.3f, -2.0f, -2.5f),
+	glm::vec3 (1.5f,  2.0f, -2.5f),
+	glm::vec3 (1.5f,  0.2f, -1.5f),
+	glm::vec3 (-1.3f,  1.0f, -1.5f)
 		};
 
 	GLuint vao;
@@ -611,7 +633,8 @@ int main ()
 			//auto lookAt = cameraPos + viewDir;
 			//view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
 
-			glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
+			//glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
+			glm::mat4 projection = glm::ortho(-8.f, 8.f, -6.f, 6.f, -10.f, 10.f);
 
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
