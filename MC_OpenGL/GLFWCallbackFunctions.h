@@ -12,6 +12,7 @@ auto GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> 
 auto GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void;
 auto GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> void;
 auto GlfwCallbackCursorPos (GLFWwindow *window, double xpos, double ypos) -> void;
+auto GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yoffset) -> void;
 
 
 }

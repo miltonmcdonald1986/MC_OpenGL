@@ -21,6 +21,7 @@
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
 
+
 MC_OpenGL::GlobalState globalState;
 
 
@@ -77,13 +78,13 @@ class Camera
 			}
 			else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT))
 			{
-				float pct = cursorDeltaX / 800.f;
-				pct = pct * 16.f;
+				float pct = cursorDeltaX*gs->zoom;
+				//pct = pct;
 				m_Center += pct*m_Right;
 				m_Eye += pct*m_Right;
 
-				pct = cursorDeltaY/600.f;
-				pct = pct * 12.f;
+				pct = cursorDeltaY*gs->zoom;
+				//pct = pct;
 				m_Center += pct * m_Up;
 				m_Eye += pct * m_Up;
 			}
@@ -303,6 +304,7 @@ auto GLFWInit (GLFWwindow *&window) -> MC_OpenGL::ErrorCode
 	glfwSetFramebufferSizeCallback (window, MC_OpenGL::GLFWCallbackFramebufferSize);
 	glfwSetKeyCallback (window, MC_OpenGL::GlfwCallbackKey);
 	glfwSetCursorEnterCallback (window, MC_OpenGL::GlfwCallbackCursorEnter);
+	glfwSetScrollCallback(window, MC_OpenGL::GlfwCallbackScroll);
 	//glfwSetCursorPosCallback (window, MC_OpenGL::GlfwCallbackCursorPos);
 	glfwSetWindowUserPointer (window, reinterpret_cast<void *>(&globalState));
 
@@ -634,7 +636,7 @@ int main ()
 			//view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
 
 			//glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
-			glm::mat4 projection = glm::ortho(-8.f, 8.f, -6.f, 6.f, -10.f, 10.f);
+			glm::mat4 projection = glm::ortho(-800.f*globalState.zoom/2.f, 800.f* globalState.zoom /2.f, -600.f* globalState.zoom /2.f, 600.f* globalState.zoom /2.f, -20.f, 20.f);
 
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));

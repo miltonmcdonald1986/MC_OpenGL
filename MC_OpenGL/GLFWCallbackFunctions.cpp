@@ -36,6 +36,9 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
         MC_OpenGL::GlobalState* globalState = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
         globalState->mixPercentage += 0.02;
         globalState->mixPercentage = std::min(globalState->mixPercentage, 1.f);
+
+        globalState->zoom *= 1.1;
+
         std::cout << globalState->mixPercentage << '\n';
     }
     if ((key == GLFW_KEY_DOWN) && (action == GLFW_PRESS || action == GLFW_REPEAT))
@@ -43,6 +46,9 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
         MC_OpenGL::GlobalState* globalState = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
         globalState->mixPercentage -= 0.02;
         globalState->mixPercentage = std::max(globalState->mixPercentage, 0.f);
+
+        globalState->zoom *= 0.9;
+
         std::cout << globalState->mixPercentage << '\n';
     }
 }
@@ -69,3 +75,11 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
     globalState->cursorPosX = xPos;
     globalState->cursorPosY = yPos;
     }
+
+
+auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yoffset) -> void
+{
+    MC_OpenGL::GlobalState* gs = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+
+    gs->zoom *= ( yoffset < 0 ? 1.1 : 0.9 );
+}

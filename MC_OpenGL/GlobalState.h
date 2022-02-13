@@ -12,6 +12,7 @@ struct GlobalState
 	double	cursorPosYPrev	= 0.;
 	int		polygonMode		= GL_FILL;
 	float	mixPercentage	= 0.f;
+	float	zoom			= 0.01f;
 	};
 
 
