@@ -8,44 +8,49 @@
 auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void
 	{
 	glViewport (0, 0, width, height);
+
+    MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+    pGS->windowHeight = (float)height;
+    pGS->windowWidth = (float)width;
 	}
 
 auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void
 {
+    MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+
 	if ((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS))
 		glfwSetWindowShouldClose(window, true);
 	if ((key == GLFW_KEY_F2) && (action == GLFW_PRESS || action == GLFW_REPEAT))
 	{
-        MC_OpenGL::GlobalState *globalState = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
-        switch (globalState->polygonMode)
+        switch (pGS->polygonMode)
             {
             case GL_LINE:
             default:
-                globalState->polygonMode = GL_FILL;
+                pGS->polygonMode = GL_FILL;
                 break;
             case GL_FILL:
-                globalState->polygonMode = GL_LINE;
+                pGS->polygonMode = GL_LINE;
                 break;
             }
 
-        glPolygonMode (GL_FRONT_AND_BACK, globalState->polygonMode);
+        glPolygonMode (GL_FRONT_AND_BACK, pGS->polygonMode);
 	}
     if ((key == GLFW_KEY_UP) && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        MC_OpenGL::GlobalState* globalState = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
-        globalState->mixPercentage += 0.02;
-        globalState->mixPercentage = std::min(globalState->mixPercentage, 1.f);
-
-        std::cout << globalState->mixPercentage << '\n';
+        pGS->mixPercentage += 0.02;
+        pGS->mixPercentage = std::min(pGS->mixPercentage, 1.f);
     }
     if ((key == GLFW_KEY_DOWN) && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        MC_OpenGL::GlobalState* globalState = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
-        globalState->mixPercentage -= 0.02;
-        globalState->mixPercentage = std::max(globalState->mixPercentage, 0.f);
+        pGS->mixPercentage -= 0.02;
+        pGS->mixPercentage = std::max(pGS->mixPercentage, 0.f);
 
-        std::cout << globalState->mixPercentage << '\n';
+        std::cout << pGS->mixPercentage << '\n';
     }
+    if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
+        {
+        pGS->fit = true;
+        }
 }
 
 auto MC_OpenGL::GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> void

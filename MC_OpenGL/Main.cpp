@@ -12,6 +12,9 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 
+#include <Mathematics/Hyperplane.h>
+#include <Mathematics/IntrLine3Plane3.h>
+#include <Mathematics/Line.h>
 #include <Mathematics/Triangle.h>
 #include <Mathematics/Vector3.h>
 
@@ -22,7 +25,7 @@
 #include "GlobalState.h"
 
 
-MC_OpenGL::GlobalState globalState;
+std::unique_ptr<MC_OpenGL::GlobalState> pGS;
 
 
 class Camera
@@ -92,9 +95,19 @@ class Camera
 			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
 			}
 
+		auto GetEye () const -> glm::vec3
+			{
+			return m_Eye;
+			}
+
 		auto GetView () const -> glm::mat4
 			{
 			return m_View;
+			}
+
+		auto GetViewDir () const -> glm::vec3
+			{
+			return glm::normalize (m_Center - m_Eye);
 			}
 
 
@@ -105,6 +118,12 @@ class Camera
 		glm::vec3 m_Up;
 		glm::vec3 m_Right;
 	};
+
+
+auto ConvertGlmVec3ToGteVector3 (const glm::vec3 &glm) -> gte::Vector3<float>
+	{
+	return gte::Vector3<float> ({ glm.x, glm.y, glm.z });
+	}
 
 
 struct WindowSize
@@ -276,7 +295,7 @@ class Triangles : public Drawable
 /// 					  because the pointer will be modified. </param>
 ///
 /// <returns> A MC_OpenGL::ErrorCode. </returns>
-auto GLFWInit (GLFWwindow *&window) -> MC_OpenGL::ErrorCode
+auto GLFWInit (GLFWwindow *&window, MC_OpenGL::GlobalState *pGS) -> MC_OpenGL::ErrorCode
 	{
 
 	glfwInit ();
@@ -306,7 +325,7 @@ auto GLFWInit (GLFWwindow *&window) -> MC_OpenGL::ErrorCode
 	glfwSetCursorEnterCallback (window, MC_OpenGL::GlfwCallbackCursorEnter);
 	glfwSetScrollCallback(window, MC_OpenGL::GlfwCallbackScroll);
 	//glfwSetCursorPosCallback (window, MC_OpenGL::GlfwCallbackCursorPos);
-	glfwSetWindowUserPointer (window, reinterpret_cast<void *>(&globalState));
+	glfwSetWindowUserPointer (window, reinterpret_cast<void *>(pGS));
 
 	return MC_OpenGL::ErrorCode::NO_ERROR;
 	}
@@ -420,8 +439,10 @@ class Shader
 
 int main ()
 	{
+	pGS = std::make_unique<MC_OpenGL::GlobalState> ();
+
 	GLFWwindow *window = nullptr;
-	MC_OpenGL::ErrorCode errorCode = GLFWInit (window);
+	MC_OpenGL::ErrorCode errorCode = GLFWInit (window, pGS.get());
 	switch (errorCode)
 		{
 		case MC_OpenGL::ErrorCode::NO_ERROR:
@@ -588,7 +609,7 @@ int main ()
 
 	// END TEXTURE STUFF
 	
-	glfwGetCursorPos (window, &globalState.cursorPosX, &globalState.cursorPosY);
+	glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
 
 	Camera camera;
 
@@ -599,9 +620,9 @@ int main ()
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Update Mouse BEFORE updating camera.
-		globalState.cursorPosXPrev = globalState.cursorPosX;
-		globalState.cursorPosYPrev = globalState.cursorPosY;
-		glfwGetCursorPos (window, &globalState.cursorPosX, &globalState.cursorPosY);
+		pGS->cursorPosXPrev = pGS->cursorPosX;
+		pGS->cursorPosYPrev = pGS->cursorPosY;
+		glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
 
 		camera.Update (window);
 
@@ -618,7 +639,40 @@ int main ()
 		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerContainer"), 0);
 		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerAwesomeFace"), 1);
 
-		glUniform1f (glGetUniformLocation (shader.GetProgramId (), "mixPercentage"), globalState.mixPercentage);
+		glUniform1f (glGetUniformLocation (shader.GetProgramId (), "mixPercentage"), pGS->mixPercentage);
+
+		if (pGS->fit)
+			{
+			float x0 = std::numeric_limits<float>::max ();
+			float y0 = std::numeric_limits<float>::max ();
+			float z0 = std::numeric_limits<float>::max ();
+			float x1 = std::numeric_limits<float>::min ();
+			float y1 = std::numeric_limits<float>::min ();
+			float z1 = std::numeric_limits<float>::min ();
+			for (int i = 0; i < 10; ++i)
+				{
+				auto ptGlm = camera.GetView () *(glm::vec4( cubePositions[i], 1.f));
+				auto ptGte = ConvertGlmVec3ToGteVector3 (ptGlm);
+				gte::Plane3<float> plane (ConvertGlmVec3ToGteVector3(camera.GetViewDir ()), ConvertGlmVec3ToGteVector3(camera.GetEye ()));
+				gte::Line3<float> line (ptGte, ConvertGlmVec3ToGteVector3 (camera.GetViewDir ()));
+				gte::FIQuery<float, gte::Line3<float>, gte::Plane3<float> > fiq;
+				gte::Vector3<float> intr = fiq (line, plane).point;
+				x0 = std::min (x0, intr[0]);
+				y0 = std::min (y0, intr[1]);
+				z0 = std::min (z0, intr[2]);
+				x1 = std::max (x1, intr[0]);
+				y1 = std::max (y1, intr[1]);
+				z1 = std::max (z1, intr[2]);
+				}
+
+			float dx = x1 - x0;
+			float dy = y1 - y0;
+			float dz = z1 - z0;
+
+			pGS->zoom = dy*(8.f/6.f)/pGS->windowHeight;
+
+			pGS->fit = false;
+			}
 
 		for (int i = 0; i < 10; ++i)
 			{
@@ -636,7 +690,7 @@ int main ()
 			//view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
 
 			//glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
-			glm::mat4 projection = glm::ortho(-800.f*globalState.zoom/2.f, 800.f* globalState.zoom /2.f, -600.f* globalState.zoom /2.f, 600.f* globalState.zoom /2.f, -20.f, 20.f);
+			glm::mat4 projection = glm::ortho(-pGS->windowWidth*pGS->zoom/2.f, pGS->windowWidth*pGS->zoom/2.f, -pGS->windowHeight*pGS->zoom/2.f, pGS->windowHeight*pGS->zoom/2.f, -100.f, 100.f);
 
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
