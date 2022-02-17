@@ -32,7 +32,7 @@ class Camera
 	{
 	public:
 		Camera ()
-			:	m_Eye(glm::vec3(0.f, 0.f, 3.f)),
+			:	m_Eye(glm::vec3(0.f, 0.f, 1.f)),
 				m_Center(glm::vec3(0.f, 0.f, 0.f)),
 				m_Up(glm::vec3(0.f, 1.f, 0.f)),
 				m_Right(glm::vec3(1.f, 0.f, 0.f))
@@ -83,13 +83,19 @@ class Camera
 			{
 				float pct = cursorDeltaX*gs->zoom;
 				//pct = pct;
-				m_Center += pct*m_Right;
-				m_Eye += pct*m_Right;
+				//m_Center += pct*m_Right;
+				//m_Eye += pct*m_Right;
 
-				pct = cursorDeltaY*gs->zoom;
+				pGS->projLeft -= cursorDeltaX*(pGS->projRight - pGS->projLeft)/pGS->windowWidth;
+				pGS->projRight -= cursorDeltaX*(pGS->projRight - pGS->projLeft)/pGS->windowWidth;
+
+				//pct = cursorDeltaY*gs->zoom;
 				//pct = pct;
-				m_Center += pct * m_Up;
-				m_Eye += pct * m_Up;
+				//m_Center += pct * m_Up;
+				//m_Eye += pct * m_Up;
+				
+				pGS->projBottom += cursorDeltaY*(pGS->projTop - pGS->projBottom)/pGS->windowHeight;
+				pGS->projTop += cursorDeltaY*(pGS->projTop - pGS->projBottom)/pGS->windowHeight;
 			}
 
 			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
@@ -658,28 +664,55 @@ int main ()
 			float z1 = std::numeric_limits<float>::min ();
 			for (int i = 0; i < 10; ++i)
 				{
-				auto ptGlm = cubePositions[i];
-				auto ptGte = ConvertGlmVec3ToGteVector3 (ptGlm);
-				gte::Plane3<float> plane (ConvertGlmVec3ToGteVector3(camera.GetViewDir ()), ConvertGlmVec3ToGteVector3(camera.GetEye ()));
-				gte::Line3<float> line (ptGte, ConvertGlmVec3ToGteVector3 (camera.GetViewDir ()));
-				gte::FIQuery<float, gte::Line3<float>, gte::Plane3<float> > fiq;
-				gte::Vector3<float> intr = fiq (line, plane).point;
-				x0 = std::min (x0, intr[0]);
-				y0 = std::min (y0, intr[1]);
-				z0 = std::min (z0, intr[2]);
-				x1 = std::max (x1, intr[0]);
-				y1 = std::max (y1, intr[1]);
-				z1 = std::max (z1, intr[2]);
+				glm::vec3 ptEyeSpace = camera.GetView () * glm::vec4 (cubePositions[i], 1.f);
+				x0 = std::min (x0, ptEyeSpace.x);
+				y0 = std::min (y0, ptEyeSpace.y);
+				z0 = std::min (z0, ptEyeSpace.z);
+				x1 = std::max (x1, ptEyeSpace.x);
+				y1 = std::max (y1, ptEyeSpace.y);
+				z1 = std::max (z1, ptEyeSpace.z);
 				}
 
 			float cx = 0.5f * (x0 + x1);
 			float cy = 0.5f * (y0 + y1);
 			float cz = 0.5f * (z0 + z1);
 
-			camera.Translate(glm::vec3(cx, cy, cz));
 			float dx = x1 - x0;
+			dx *= 1.1f;
 			float dy = y1 - y0;
+			dy *= 1.1f;
+
 			float dz = z1 - z0;
+
+			float V = pGS->windowWidth/pGS->windowHeight;
+			float A = dx/dy;
+			if (V >= A)
+				{
+				pGS->projLeft = cx - V/A*dx/2.f;
+				pGS->projRight = cx + V/A*dx/2.f;
+				pGS->projBottom = cy - dy/2.f;
+				pGS->projTop = cy + dy/2.f;
+				}
+			else
+				{
+				pGS->projLeft = cx - dx/2.f;
+				pGS->projRight = cx + dx/2.f;
+				pGS->projBottom = cy -A/V*dy/2.f;
+				pGS->projTop = cy + A/V*dy/2.f;
+				}
+			
+
+			//pGS->projLeft = cx - dx / 2.f;
+			//pGS->projRight = cx + dx / 2.f;
+			//pGS->projBottom = cy - dy / 2.f;
+			//pGS->projTop = cy + dy / 2.f;
+			pGS->projNear = -1000.f;// cz - dz;
+			pGS->projFar = 1000.f;// cz + dz;
+
+			//camera.Translate(glm::vec3(cx, cy, cz));
+			//float dx = x1 - x0;
+			//float dy = y1 - y0;
+			//float dz = z1 - z0;
 
 			//auto cameraPosInViewMat = camera.GetView() * glm::vec4(camera.GetEye(), 1.f);
 			//glm::vec3 newPos = glm::inverse(camera.GetView())*glm::vec4((x0 + x1) / 2.f, (y0 + y1) / 2.f, (z0 + z1) / 2.f, 1.f);
@@ -694,12 +727,19 @@ int main ()
 
 		for (int i = 0; i < 10; ++i)
 			{
+			glm::mat4 cameraModel = glm::mat4 (1.f);
+			cameraModel = glm::translate (cameraModel, camera.GetEye ());
+			glm::mat4 cameraView = camera.GetView () * cameraModel;
+
 			glm::mat4 model = glm::mat4 (1.f);
 			model = glm::translate (model, cubePositions[i]);
 			//if (i % 3 == 0)
 			//	model = glm::rotate (model, i*(float)glfwGetTime ()-i * glm::radians (50.0f), glm::vec3 (0.5f, 1.0f, 0.0f));
 
 			glm::mat4 view = camera.GetView ();// glm::mat4 (1.f);
+
+			auto pos = camera.GetView () * glm::vec4(camera.GetEye (), 1.f);
+			auto view1 = camera.GetView () * glm::vec4(camera.GetViewDir (), 1.f);
 			//auto cameraPos = glm::vec3 (0.f, 0.f, 6.f);
 			//glm::mat4 newView = glm::rotate<float> (view, glfwGetTime (), glm::vec3 (0.f, 1.f, 0.f));
 			//cameraPos = newView * glm::vec4(cameraPos, 1.f);
@@ -708,7 +748,7 @@ int main ()
 			//view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
 
 			//glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
-			glm::mat4 projection = glm::ortho(-pGS->windowWidth*pGS->zoom/2.f, pGS->windowWidth*pGS->zoom/2.f, -pGS->windowHeight*pGS->zoom/2.f, pGS->windowHeight*pGS->zoom/2.f, -100.f, 100.f);
+			glm::mat4 projection = glm::ortho(pGS->projLeft, pGS->projRight, pGS->projBottom, pGS->projTop, pGS->projNear, pGS->projFar);
 
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));

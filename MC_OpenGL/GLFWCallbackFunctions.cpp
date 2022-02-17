@@ -78,9 +78,43 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
 
 auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yoffset) -> void
 {
-    MC_OpenGL::GlobalState* gs = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+    MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
 
-    gs->zoom *= ( yoffset < 0 ? 1.1 : 0.9 );
+    double cx = (pGS->projLeft + pGS->projRight)/2.f;
+    double cy = (pGS->projBottom + pGS->projTop)/2.f;
 
-    std::cout << gs->zoom << '\n';
+    float dx = pGS->projRight - pGS->projLeft;
+    float dy = pGS->projTop - pGS->projBottom;
+    if (yoffset > 0)
+        {
+        dx *= 0.9;
+        dy *= 0.9;
+        }
+    else
+        {
+        dx *= 1.1;
+        dy *= 1.1;
+        }
+    
+    float V = pGS->windowWidth / pGS->windowHeight;
+    float A = dx / dy;
+    if (V >= A)
+        {
+        pGS->projLeft = cx - V / A * dx / 2.f;
+        pGS->projRight = cx + V / A * dx / 2.f;
+        pGS->projBottom = cy - dy / 2.f;
+        pGS->projTop = cy + dy / 2.f;
+        }
+    else
+        {
+        pGS->projLeft = cx - dx / 2.f;
+        pGS->projRight = cx + dx / 2.f;
+        pGS->projBottom = cy - A / V * dy / 2.f;
+        pGS->projTop = cy + A / V * dy / 2.f;
+        }
+
+
+    //gs->zoom *= ( yoffset < 0 ? 1.1 : 0.9 );
+
+    //std::cout << gs->zoom << '\n';
 }
