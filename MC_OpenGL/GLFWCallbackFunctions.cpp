@@ -81,4 +81,6 @@ auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yo
     MC_OpenGL::GlobalState* gs = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
 
     gs->zoom *= ( yoffset < 0 ? 1.1 : 0.9 );
+
+    std::cout << gs->zoom << '\n';
 }
