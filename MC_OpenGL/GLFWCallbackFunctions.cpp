@@ -5,13 +5,47 @@
 #include <iostream>
 
 
+auto UpdateProjection(float dx, float dy, MC_OpenGL::GlobalState* pGS)
+{
+    float V = pGS->windowWidth / pGS->windowHeight;
+    float A = dx / dy;
+    if (V >= A)
+    {
+        pGS->projLeft = -1.f*(V/A)*dx/2.f;
+        pGS->projRight = (V/A)*dx/2.f;
+        pGS->projBottom = -1.f*dy/2.f;
+        pGS->projTop = dy/2.f;
+    }
+    else
+    {
+        pGS->projLeft = -1.f*dx/2.f;
+        pGS->projRight = dx/2.f;
+        pGS->projBottom = -1.f*(A/V)*dy/2.f;
+        pGS->projTop = (A/V)*dy/2.f;
+    }
+}
+
+
 auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void
 	{
 	glViewport (0, 0, width, height);
 
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+    
+    // Before updating the window width and height, get the current 
+    // projection value and multiply them by newWidth/oldWidth and newHeight/oldHeight
+    // so that the objects remain the same size after the window is resized.
+    float dx = pGS->projRight - pGS->projLeft;
+    float dy = pGS->projTop - pGS->projBottom;
+
+    dx *= (float)width/pGS->windowWidth;
+    dy *= (float)height/pGS->windowHeight;
+
+    // Now update the window info in global state.
     pGS->windowHeight = (float)height;
     pGS->windowWidth = (float)width;
+    
+    UpdateProjection(dx, dy, pGS);
 	}
 
 auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void
@@ -96,25 +130,5 @@ auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yo
         dy *= 1.1;
         }
     
-    float V = pGS->windowWidth / pGS->windowHeight;
-    float A = dx / dy;
-    if (V >= A)
-        {
-        pGS->projLeft = cx - V / A * dx / 2.f;
-        pGS->projRight = cx + V / A * dx / 2.f;
-        pGS->projBottom = cy - dy / 2.f;
-        pGS->projTop = cy + dy / 2.f;
-        }
-    else
-        {
-        pGS->projLeft = cx - dx / 2.f;
-        pGS->projRight = cx + dx / 2.f;
-        pGS->projBottom = cy - A / V * dy / 2.f;
-        pGS->projTop = cy + A / V * dy / 2.f;
-        }
-
-
-    //gs->zoom *= ( yoffset < 0 ? 1.1 : 0.9 );
-
-    //std::cout << gs->zoom << '\n';
+    UpdateProjection(dx, dy, pGS);
 }

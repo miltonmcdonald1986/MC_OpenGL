@@ -532,6 +532,17 @@ int main ()
 	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 		};
 
+	std::array<glm::vec3, 8> boundingBox = {
+		glm::vec3(-0.5f, -0.5f, -0.5f),
+		glm::vec3(-0.5f, -0.5f,  0.5f),
+		glm::vec3(-0.5f,  0.5f, -0.5f),
+		glm::vec3(-0.5f,  0.5f,  0.5f),
+		glm::vec3( 0.5f, -0.5f, -0.5f),
+		glm::vec3( 0.5f, -0.5f,  0.5f),
+		glm::vec3( 0.5f,  0.5f, -0.5f),
+		glm::vec3( 0.5f,  0.5f,  0.5f)
+	};
+
 	glm::vec3 cubePositions[] = {
 	glm::vec3 (0.0f,  0.0f,  0.0f),
 	glm::vec3 (2.0f,  5.0f, -15.0f),
@@ -664,13 +675,70 @@ int main ()
 			float z1 = std::numeric_limits<float>::min ();
 			for (int i = 0; i < 10; ++i)
 				{
-				glm::vec3 ptEyeSpace = camera.GetView () * glm::vec4 (cubePositions[i], 1.f);
-				x0 = std::min (x0, ptEyeSpace.x);
-				y0 = std::min (y0, ptEyeSpace.y);
-				z0 = std::min (z0, ptEyeSpace.z);
-				x1 = std::max (x1, ptEyeSpace.x);
-				y1 = std::max (y1, ptEyeSpace.y);
-				z1 = std::max (z1, ptEyeSpace.z);
+				glm::vec3 ptEyeSpace0 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[0], 1.f);
+				glm::vec3 ptEyeSpace1 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[1], 1.f);
+				glm::vec3 ptEyeSpace2 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[2], 1.f);
+				glm::vec3 ptEyeSpace3 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[3], 1.f);
+				glm::vec3 ptEyeSpace4 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[4], 1.f);
+				glm::vec3 ptEyeSpace5 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[5], 1.f);
+				glm::vec3 ptEyeSpace6 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[6], 1.f);
+				glm::vec3 ptEyeSpace7 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[7], 1.f);
+				
+				x0 = std::min (x0, ptEyeSpace0.x);
+				y0 = std::min (y0, ptEyeSpace0.y);
+				z0 = std::min (z0, ptEyeSpace0.z);
+				x1 = std::max (x1, ptEyeSpace0.x);
+				y1 = std::max (y1, ptEyeSpace0.y);
+				z1 = std::max (z1, ptEyeSpace0.z);
+
+				x0 = std::min(x0, ptEyeSpace1.x);
+				y0 = std::min(y0, ptEyeSpace1.y);
+				z0 = std::min(z0, ptEyeSpace1.z);
+				x1 = std::max(x1, ptEyeSpace1.x);
+				y1 = std::max(y1, ptEyeSpace1.y);
+				z1 = std::max(z1, ptEyeSpace1.z);
+
+				x0 = std::min(x0, ptEyeSpace2.x);
+				y0 = std::min(y0, ptEyeSpace2.y);
+				z0 = std::min(z0, ptEyeSpace2.z);
+				x1 = std::max(x1, ptEyeSpace2.x);
+				y1 = std::max(y1, ptEyeSpace2.y);
+				z1 = std::max(z1, ptEyeSpace2.z);
+
+				x0 = std::min(x0, ptEyeSpace3.x);
+				y0 = std::min(y0, ptEyeSpace3.y);
+				z0 = std::min(z0, ptEyeSpace3.z);
+				x1 = std::max(x1, ptEyeSpace3.x);
+				y1 = std::max(y1, ptEyeSpace3.y);
+				z1 = std::max(z1, ptEyeSpace3.z);
+
+				x0 = std::min(x0, ptEyeSpace4.x);
+				y0 = std::min(y0, ptEyeSpace4.y);
+				z0 = std::min(z0, ptEyeSpace4.z);
+				x1 = std::max(x1, ptEyeSpace4.x);
+				y1 = std::max(y1, ptEyeSpace4.y);
+				z1 = std::max(z1, ptEyeSpace4.z);
+
+				x0 = std::min(x0, ptEyeSpace5.x);
+				y0 = std::min(y0, ptEyeSpace5.y);
+				z0 = std::min(z0, ptEyeSpace5.z);
+				x1 = std::max(x1, ptEyeSpace5.x);
+				y1 = std::max(y1, ptEyeSpace5.y);
+				z1 = std::max(z1, ptEyeSpace5.z);
+
+				x0 = std::min(x0, ptEyeSpace6.x);
+				y0 = std::min(y0, ptEyeSpace6.y);
+				z0 = std::min(z0, ptEyeSpace6.z);
+				x1 = std::max(x1, ptEyeSpace6.x);
+				y1 = std::max(y1, ptEyeSpace6.y);
+				z1 = std::max(z1, ptEyeSpace6.z);
+
+				x0 = std::min(x0, ptEyeSpace7.x);
+				y0 = std::min(y0, ptEyeSpace7.y);
+				z0 = std::min(z0, ptEyeSpace7.z);
+				x1 = std::max(x1, ptEyeSpace7.x);
+				y1 = std::max(y1, ptEyeSpace7.y);
+				z1 = std::max(z1, ptEyeSpace7.z);
 				}
 
 			float cx = 0.5f * (x0 + x1);
@@ -678,9 +746,9 @@ int main ()
 			float cz = 0.5f * (z0 + z1);
 
 			float dx = x1 - x0;
-			dx *= 1.1f;
+			//dx *= 1.1f;
 			float dy = y1 - y0;
-			dy *= 1.1f;
+			//dy *= 1.1f;
 
 			float dz = z1 - z0;
 
