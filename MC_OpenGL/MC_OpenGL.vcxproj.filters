@@ -24,12 +24,18 @@
     <ClCompile Include="GLFWCallbackFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ProjectionOrthographic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbackFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlobalState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectionOrthographic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

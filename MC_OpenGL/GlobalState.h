@@ -1,6 +1,9 @@
 #pragma once
 
 
+#include <glad/glad.h>
+
+
 namespace MC_OpenGL {
 
 

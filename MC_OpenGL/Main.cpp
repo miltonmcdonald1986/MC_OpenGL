@@ -23,6 +23,7 @@
 
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
+#include "ProjectionOrthographic.h"
 
 
 std::unique_ptr<MC_OpenGL::GlobalState> pGS;
@@ -635,7 +636,9 @@ int main ()
 	
 	glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
 
+
 	Camera camera;
+	pGS->fit = true;
 
 	// Game loop
 	while (!glfwWindowShouldClose (window))
@@ -674,108 +677,60 @@ int main ()
 			float y1 = std::numeric_limits<float>::min ();
 			float z1 = std::numeric_limits<float>::min ();
 			for (int i = 0; i < 10; ++i)
+			{
+				for (int j = 0; j < boundingBox.size(); ++j)
 				{
-				glm::vec3 ptEyeSpace0 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[0], 1.f);
-				glm::vec3 ptEyeSpace1 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[1], 1.f);
-				glm::vec3 ptEyeSpace2 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[2], 1.f);
-				glm::vec3 ptEyeSpace3 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[3], 1.f);
-				glm::vec3 ptEyeSpace4 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[4], 1.f);
-				glm::vec3 ptEyeSpace5 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[5], 1.f);
-				glm::vec3 ptEyeSpace6 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[6], 1.f);
-				glm::vec3 ptEyeSpace7 = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[7], 1.f);
-				
-				x0 = std::min (x0, ptEyeSpace0.x);
-				y0 = std::min (y0, ptEyeSpace0.y);
-				z0 = std::min (z0, ptEyeSpace0.z);
-				x1 = std::max (x1, ptEyeSpace0.x);
-				y1 = std::max (y1, ptEyeSpace0.y);
-				z1 = std::max (z1, ptEyeSpace0.z);
-
-				x0 = std::min(x0, ptEyeSpace1.x);
-				y0 = std::min(y0, ptEyeSpace1.y);
-				z0 = std::min(z0, ptEyeSpace1.z);
-				x1 = std::max(x1, ptEyeSpace1.x);
-				y1 = std::max(y1, ptEyeSpace1.y);
-				z1 = std::max(z1, ptEyeSpace1.z);
-
-				x0 = std::min(x0, ptEyeSpace2.x);
-				y0 = std::min(y0, ptEyeSpace2.y);
-				z0 = std::min(z0, ptEyeSpace2.z);
-				x1 = std::max(x1, ptEyeSpace2.x);
-				y1 = std::max(y1, ptEyeSpace2.y);
-				z1 = std::max(z1, ptEyeSpace2.z);
-
-				x0 = std::min(x0, ptEyeSpace3.x);
-				y0 = std::min(y0, ptEyeSpace3.y);
-				z0 = std::min(z0, ptEyeSpace3.z);
-				x1 = std::max(x1, ptEyeSpace3.x);
-				y1 = std::max(y1, ptEyeSpace3.y);
-				z1 = std::max(z1, ptEyeSpace3.z);
-
-				x0 = std::min(x0, ptEyeSpace4.x);
-				y0 = std::min(y0, ptEyeSpace4.y);
-				z0 = std::min(z0, ptEyeSpace4.z);
-				x1 = std::max(x1, ptEyeSpace4.x);
-				y1 = std::max(y1, ptEyeSpace4.y);
-				z1 = std::max(z1, ptEyeSpace4.z);
-
-				x0 = std::min(x0, ptEyeSpace5.x);
-				y0 = std::min(y0, ptEyeSpace5.y);
-				z0 = std::min(z0, ptEyeSpace5.z);
-				x1 = std::max(x1, ptEyeSpace5.x);
-				y1 = std::max(y1, ptEyeSpace5.y);
-				z1 = std::max(z1, ptEyeSpace5.z);
-
-				x0 = std::min(x0, ptEyeSpace6.x);
-				y0 = std::min(y0, ptEyeSpace6.y);
-				z0 = std::min(z0, ptEyeSpace6.z);
-				x1 = std::max(x1, ptEyeSpace6.x);
-				y1 = std::max(y1, ptEyeSpace6.y);
-				z1 = std::max(z1, ptEyeSpace6.z);
-
-				x0 = std::min(x0, ptEyeSpace7.x);
-				y0 = std::min(y0, ptEyeSpace7.y);
-				z0 = std::min(z0, ptEyeSpace7.z);
-				x1 = std::max(x1, ptEyeSpace7.x);
-				y1 = std::max(y1, ptEyeSpace7.y);
-				z1 = std::max(z1, ptEyeSpace7.z);
+					glm::vec3 ptEyeSpace = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[j], 1.f);
+					x0 = std::min(x0, ptEyeSpace.x);
+					y0 = std::min(y0, ptEyeSpace.y);
+					z0 = std::min(z0, ptEyeSpace.z);
+					x1 = std::max(x1, ptEyeSpace.x);
+					y1 = std::max(y1, ptEyeSpace.y);
+					z1 = std::max(z1, ptEyeSpace.z);
 				}
+			}
 
 			float cx = 0.5f * (x0 + x1);
 			float cy = 0.5f * (y0 + y1);
 			float cz = 0.5f * (z0 + z1);
 
 			float dx = x1 - x0;
-			//dx *= 1.1f;
+			dx *= 1.1f;
 			float dy = y1 - y0;
-			//dy *= 1.1f;
+			dy *= 1.1f;
+			float dz = 2.f*(z1 - z0); // I like to double dz on fit so that the objects won't get clipped if I rotate the camera around.
+			dz *= 1.1f;
 
-			float dz = z1 - z0;
+			MC_OpenGL::UpdateProjection(cx, cy, dx, dy, dz, pGS.get());
 
-			float V = pGS->windowWidth/pGS->windowHeight;
-			float A = dx/dy;
-			if (V >= A)
-				{
-				pGS->projLeft = cx - V/A*dx/2.f;
-				pGS->projRight = cx + V/A*dx/2.f;
-				pGS->projBottom = cy - dy/2.f;
-				pGS->projTop = cy + dy/2.f;
-				}
-			else
-				{
-				pGS->projLeft = cx - dx/2.f;
-				pGS->projRight = cx + dx/2.f;
-				pGS->projBottom = cy -A/V*dy/2.f;
-				pGS->projTop = cy + A/V*dy/2.f;
-				}
+			//float V = pGS->windowWidth/pGS->windowHeight;
+			//float A = dx/dy;
+			//if (V >= A)
+			//	{
+			//	pGS->projLeft = cx - V/A*dx/2.f;
+			//	pGS->projRight = cx + V/A*dx/2.f;
+			//	pGS->projBottom = cy - dy/2.f;
+			//	pGS->projTop = cy + dy/2.f;
+			//	pGS->projNear = -1.1f*dz;
+			//	pGS->projFar = 1.1f*dz;
+			//	}
+			//else
+			//	{
+			//	pGS->projLeft = cx - dx/2.f;
+			//	pGS->projRight = cx + dx/2.f;
+			//	pGS->projBottom = cy -A/V*dy/2.f;
+			//	pGS->projTop = cy + A/V*dy/2.f;
+			//	pGS->projNear = -1.1f * dz;
+			//	pGS->projFar = 1.1f * dz;
+			//	}
 			
 
 			//pGS->projLeft = cx - dx / 2.f;
 			//pGS->projRight = cx + dx / 2.f;
 			//pGS->projBottom = cy - dy / 2.f;
 			//pGS->projTop = cy + dy / 2.f;
-			pGS->projNear = -1000.f;// cz - dz;
-			pGS->projFar = 1000.f;// cz + dz;
+			//pGS->projNear = -1000.f;// cz - dz;
+			//pGS->projFar = 1000.f;// cz + dz;
 
 			//camera.Translate(glm::vec3(cx, cy, cz));
 			//float dx = x1 - x0;

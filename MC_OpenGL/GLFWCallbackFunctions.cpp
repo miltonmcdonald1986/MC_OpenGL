@@ -1,29 +1,9 @@
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
+#include "ProjectionOrthographic.h"
 
 #include <algorithm>
 #include <iostream>
-
-
-auto UpdateProjection(float dx, float dy, MC_OpenGL::GlobalState* pGS)
-{
-    float V = pGS->windowWidth / pGS->windowHeight;
-    float A = dx / dy;
-    if (V >= A)
-    {
-        pGS->projLeft = -1.f*(V/A)*dx/2.f;
-        pGS->projRight = (V/A)*dx/2.f;
-        pGS->projBottom = -1.f*dy/2.f;
-        pGS->projTop = dy/2.f;
-    }
-    else
-    {
-        pGS->projLeft = -1.f*dx/2.f;
-        pGS->projRight = dx/2.f;
-        pGS->projBottom = -1.f*(A/V)*dy/2.f;
-        pGS->projTop = (A/V)*dy/2.f;
-    }
-}
 
 
 auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void
@@ -32,11 +12,15 @@ auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int 
 
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
     
+    float cx = 0.5f*(pGS->projLeft + pGS->projRight);
+    float cy = 0.5f * (pGS->projBottom + pGS->projTop);
+
     // Before updating the window width and height, get the current 
     // projection value and multiply them by newWidth/oldWidth and newHeight/oldHeight
     // so that the objects remain the same size after the window is resized.
     float dx = pGS->projRight - pGS->projLeft;
     float dy = pGS->projTop - pGS->projBottom;
+    float dz = pGS->projFar - pGS->projNear;
 
     dx *= (float)width/pGS->windowWidth;
     dy *= (float)height/pGS->windowHeight;
@@ -45,7 +29,7 @@ auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int 
     pGS->windowHeight = (float)height;
     pGS->windowWidth = (float)width;
     
-    UpdateProjection(dx, dy, pGS);
+    UpdateProjection(cx, cy, dx, dy, dz, pGS);
 	}
 
 auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void
@@ -119,6 +103,7 @@ auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yo
 
     float dx = pGS->projRight - pGS->projLeft;
     float dy = pGS->projTop - pGS->projBottom;
+    float dz = pGS->projFar - pGS->projNear;
     if (yoffset > 0)
         {
         dx *= 0.9;
@@ -130,5 +115,5 @@ auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yo
         dy *= 1.1;
         }
     
-    UpdateProjection(dx, dy, pGS);
+    UpdateProjection(cx, cy, dx, dy, dz, pGS);
 }
