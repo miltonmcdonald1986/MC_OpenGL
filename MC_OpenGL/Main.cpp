@@ -21,117 +21,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "Camera.h"
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
 #include "ProjectionOrthographic.h"
 
 
 std::unique_ptr<MC_OpenGL::GlobalState> pGS;
-
-
-class Camera
-	{
-	public:
-		Camera ()
-			:	m_Eye(glm::vec3(0.f, 0.f, 1.f)),
-				m_Center(glm::vec3(0.f, 0.f, 0.f)),
-				m_Up(glm::vec3(0.f, 1.f, 0.f)),
-				m_Right(glm::vec3(1.f, 0.f, 0.f))
-			{
-			glm::vec4 position(m_Eye, 1.f);
-			glm::vec4 pivot(m_Center, 1.f);
-
-			float angleX = 0.f;
-			float angleY = 0.f;
-
-			m_Eye = glm::rotate(glm::mat4(1.f), -1.f * angleX, m_Up) * (position - pivot) + pivot;
-			m_Right = glm::normalize(glm::cross(glm::normalize(m_Eye - m_Center), m_Up));
-
-			position = glm::vec4(m_Eye, 1.f);
-			pivot = glm::vec4(m_Center, 1.f);
-
-			m_Eye = glm::rotate(glm::mat4(1.f), 1.f * angleY, m_Right) * (position - pivot) + pivot;
-			m_Up = glm::normalize(glm::cross(glm::normalize(m_Center - m_Eye), m_Right));
-
-			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
-			}
-
-		auto Update (GLFWwindow *window)
-			{
-			MC_OpenGL::GlobalState* gs = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
-
-			float cursorDeltaX = gs->cursorPosX - gs->cursorPosXPrev;
-			float cursorDeltaY = gs->cursorPosY - gs->cursorPosYPrev;
-
-			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
-			{
-				glm::vec4 position(m_Eye, 1.f);
-				glm::vec4 pivot(m_Center, 1.f);
-
-				float angleX = cursorDeltaX * 2.f * glm::pi<float>() / 800.f;
-				float angleY = cursorDeltaY * 2.f * glm::pi<float>() / 600.f;
-
-				m_Eye = glm::rotate(glm::mat4(1.f), -1.f*angleX, m_Up)*(position - pivot) + pivot;
-				m_Right = glm::normalize(glm::cross(glm::normalize(m_Eye - m_Center), m_Up));
-
-				position = glm::vec4(m_Eye, 1.f);
-				pivot = glm::vec4(m_Center, 1.f);
-
-				m_Eye = glm::rotate(glm::mat4(1.f), 1.f*angleY, m_Right)*(position - pivot) + pivot;
-				m_Up = glm::normalize(glm::cross(glm::normalize(m_Center - m_Eye), m_Right));
-			}
-			else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT))
-			{
-				float pct = cursorDeltaX*gs->zoom;
-				//pct = pct;
-				//m_Center += pct*m_Right;
-				//m_Eye += pct*m_Right;
-
-				pGS->projLeft -= cursorDeltaX*(pGS->projRight - pGS->projLeft)/pGS->windowWidth;
-				pGS->projRight -= cursorDeltaX*(pGS->projRight - pGS->projLeft)/pGS->windowWidth;
-
-				//pct = cursorDeltaY*gs->zoom;
-				//pct = pct;
-				//m_Center += pct * m_Up;
-				//m_Eye += pct * m_Up;
-				
-				pGS->projBottom += cursorDeltaY*(pGS->projTop - pGS->projBottom)/pGS->windowHeight;
-				pGS->projTop += cursorDeltaY*(pGS->projTop - pGS->projBottom)/pGS->windowHeight;
-			}
-
-			m_View = glm::lookAt (m_Eye, m_Center, m_Up);
-			}
-
-		auto GetEye () const -> glm::vec3
-			{
-			return m_Eye;
-			}
-
-		auto GetView () const -> glm::mat4
-			{
-			return m_View;
-			}
-
-		auto GetViewDir () const -> glm::vec3
-			{
-			return glm::normalize (m_Center - m_Eye);
-			}
-
-		auto Translate(const glm::vec3 &toPoint) -> void
-		{
-			auto diff = toPoint - m_Eye;
-			m_Eye += diff;
-			m_Center += diff;
-		}
-
-
-	private:
-		glm::mat4 m_View;
-		glm::vec3 m_Eye;
-		glm::vec3 m_Center;
-		glm::vec3 m_Up;
-		glm::vec3 m_Right;
-	};
 
 
 auto ConvertGlmVec3ToGteVector3 (const glm::vec3 &glm) -> gte::Vector3<float>
@@ -287,11 +183,13 @@ class Triangles : public Drawable
 
 		auto Draw () const -> void
 			{
+			GLsizei numVertices = m_Vertices.size();
+
 			glBindVertexArray (m_Vao);
 			if (m_Indices.empty ())
-				glDrawArrays (GL_TRIANGLES, 0, m_Vertices.size ());
+				glDrawArrays (GL_TRIANGLES, 0, numVertices);
 			else
-				glDrawElements (GL_TRIANGLES, m_Vertices.size (), GL_UNSIGNED_INT, 0);
+				glDrawElements (GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, 0);
 			glBindVertexArray (0);
 			}
 
@@ -338,7 +236,7 @@ auto GLFWInit (GLFWwindow *&window, MC_OpenGL::GlobalState *pGS) -> MC_OpenGL::E
 	glfwSetKeyCallback (window, MC_OpenGL::GlfwCallbackKey);
 	glfwSetCursorEnterCallback (window, MC_OpenGL::GlfwCallbackCursorEnter);
 	glfwSetScrollCallback(window, MC_OpenGL::GlfwCallbackScroll);
-	//glfwSetCursorPosCallback (window, MC_OpenGL::GlfwCallbackCursorPos);
+	glfwSetCursorPosCallback (window, MC_OpenGL::GlfwCallbackCursorPos);
 	glfwSetWindowUserPointer (window, reinterpret_cast<void *>(pGS));
 
 	return MC_OpenGL::ErrorCode::NO_ERROR;
@@ -476,19 +374,7 @@ int main ()
 		std::cerr << i << '\n';
 		return static_cast<int>(e);
 		}
-
-	//float vertices[] = {
- //   // positions          // colors           // texture coords
- //    0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
- //    0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
- //   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
- //   -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
-	//};
-	//unsigned int indices[] = {  // note that we start from 0!
- //   0, 1, 3,   // first triangle
- //   1, 2, 3    // second triangle
-	//}; 
-	
+		
 	float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -566,16 +452,8 @@ int main ()
 	glBindBuffer (GL_ARRAY_BUFFER, vbo);
 	glBufferData (GL_ARRAY_BUFFER, 180*sizeof(float), vertices, GL_STATIC_DRAW);
 
-	//GLuint ebo;
-	//glGenBuffers (1, &ebo);
-	//glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, ebo);
-	//glBufferData (GL_ELEMENT_ARRAY_BUFFER, 6*sizeof (int), indices, GL_STATIC_DRAW);
-
 	glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
 	glEnableVertexAttribArray (0);
-
-	//glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof (float)));
-	//glEnableVertexAttribArray (1);
 
 	glVertexAttribPointer (1, 2, GL_FLOAT, GL_FALSE, 5*sizeof (float), (void *)(3*sizeof (float)));
 	glEnableVertexAttribArray (1);
@@ -636,22 +514,13 @@ int main ()
 	
 	glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
 
-
-	Camera camera;
-	pGS->fit = true;
+	pGS->fitAll = true;
 
 	// Game loop
 	while (!glfwWindowShouldClose (window))
 		{
 		glClearColor (0.2f, 0.3f, 0.3f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Update Mouse BEFORE updating camera.
-		pGS->cursorPosXPrev = pGS->cursorPosX;
-		pGS->cursorPosYPrev = pGS->cursorPosY;
-		glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
-
-		camera.Update (window);
 
 		shader.Use();
 
@@ -668,7 +537,7 @@ int main ()
 
 		glUniform1f (glGetUniformLocation (shader.GetProgramId (), "mixPercentage"), pGS->mixPercentage);
 
-		if (pGS->fit)
+		if (pGS->fitAll || pGS->fitZOnly)
 			{
 			float x0 = std::numeric_limits<float>::max ();
 			float y0 = std::numeric_limits<float>::max ();
@@ -680,12 +549,15 @@ int main ()
 			{
 				for (int j = 0; j < boundingBox.size(); ++j)
 				{
-					glm::vec3 ptEyeSpace = camera.GetView() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[j], 1.f);
-					x0 = std::min(x0, ptEyeSpace.x);
-					y0 = std::min(y0, ptEyeSpace.y);
+					glm::vec3 ptEyeSpace = pGS->camera.ViewMatrix() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[j], 1.f);
+					if (pGS->fitAll)
+					{
+						x0 = std::min(x0, ptEyeSpace.x);
+						y0 = std::min(y0, ptEyeSpace.y);
+						x1 = std::max(x1, ptEyeSpace.x);
+						y1 = std::max(y1, ptEyeSpace.y);
+					}
 					z0 = std::min(z0, ptEyeSpace.z);
-					x1 = std::max(x1, ptEyeSpace.x);
-					y1 = std::max(y1, ptEyeSpace.y);
 					z1 = std::max(z1, ptEyeSpace.z);
 				}
 			}
@@ -698,86 +570,33 @@ int main ()
 			dx *= 1.1f;
 			float dy = y1 - y0;
 			dy *= 1.1f;
-			float dz = 2.f*(z1 - z0); // I like to double dz on fit so that the objects won't get clipped if I rotate the camera around.
-			dz *= 1.1f;
-
-			MC_OpenGL::UpdateProjection(cx, cy, dx, dy, dz, pGS.get());
-
-			//float V = pGS->windowWidth/pGS->windowHeight;
-			//float A = dx/dy;
-			//if (V >= A)
-			//	{
-			//	pGS->projLeft = cx - V/A*dx/2.f;
-			//	pGS->projRight = cx + V/A*dx/2.f;
-			//	pGS->projBottom = cy - dy/2.f;
-			//	pGS->projTop = cy + dy/2.f;
-			//	pGS->projNear = -1.1f*dz;
-			//	pGS->projFar = 1.1f*dz;
-			//	}
-			//else
-			//	{
-			//	pGS->projLeft = cx - dx/2.f;
-			//	pGS->projRight = cx + dx/2.f;
-			//	pGS->projBottom = cy -A/V*dy/2.f;
-			//	pGS->projTop = cy + A/V*dy/2.f;
-			//	pGS->projNear = -1.1f * dz;
-			//	pGS->projFar = 1.1f * dz;
-			//	}
 			
+			// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
+			float zNear = -1.f * z1;
+			float zFar = -1.f * z0;
 
-			//pGS->projLeft = cx - dx / 2.f;
-			//pGS->projRight = cx + dx / 2.f;
-			//pGS->projBottom = cy - dy / 2.f;
-			//pGS->projTop = cy + dy / 2.f;
-			//pGS->projNear = -1000.f;// cz - dz;
-			//pGS->projFar = 1000.f;// cz + dz;
+			if (pGS->fitAll)
+				MC_OpenGL::UpdateProjection(cx, cy, dx, dy, zNear, zFar, pGS.get());
+			else
+				MC_OpenGL::UpdateProjection(zNear, zFar, pGS.get());
 
-			//camera.Translate(glm::vec3(cx, cy, cz));
-			//float dx = x1 - x0;
-			//float dy = y1 - y0;
-			//float dz = z1 - z0;
-
-			//auto cameraPosInViewMat = camera.GetView() * glm::vec4(camera.GetEye(), 1.f);
-			//glm::vec3 newPos = glm::inverse(camera.GetView())*glm::vec4((x0 + x1) / 2.f, (y0 + y1) / 2.f, (z0 + z1) / 2.f, 1.f);
-			//
-			//if (dx > dy)
-			//	pGS->zoom = dx/pGS->windowWidth;
-			//else
-			//	pGS->zoom = (dy*pGS->windowWidth/pGS->windowHeight)/pGS->windowWidth;
-
-			pGS->fit = false;
+			pGS->fitAll = false;
+			pGS->fitZOnly = false;
 			}
 
 		for (int i = 0; i < 10; ++i)
 			{
-			glm::mat4 cameraModel = glm::mat4 (1.f);
-			cameraModel = glm::translate (cameraModel, camera.GetEye ());
-			glm::mat4 cameraView = camera.GetView () * cameraModel;
-
 			glm::mat4 model = glm::mat4 (1.f);
 			model = glm::translate (model, cubePositions[i]);
-			//if (i % 3 == 0)
-			//	model = glm::rotate (model, i*(float)glfwGetTime ()-i * glm::radians (50.0f), glm::vec3 (0.5f, 1.0f, 0.0f));
+			
+			glm::mat4 view = pGS->camera.ViewMatrix();// glm::mat4 (1.f);
 
-			glm::mat4 view = camera.GetView ();// glm::mat4 (1.f);
-
-			auto pos = camera.GetView () * glm::vec4(camera.GetEye (), 1.f);
-			auto view1 = camera.GetView () * glm::vec4(camera.GetViewDir (), 1.f);
-			//auto cameraPos = glm::vec3 (0.f, 0.f, 6.f);
-			//glm::mat4 newView = glm::rotate<float> (view, glfwGetTime (), glm::vec3 (0.f, 1.f, 0.f));
-			//cameraPos = newView * glm::vec4(cameraPos, 1.f);
-			//auto viewDir = glm::normalize(cubePositions[0] - cameraPos);
-			//auto lookAt = cameraPos + viewDir;
-			//view = glm::lookAt (cameraPos, cubePositions[0], glm::vec3 (0.f, 1.f, 0.f));//glm::translate (view, glm::vec3 (0.f, 0.f, -3.f - 4*globalState.mixPercentage));
-
-			//glm::mat4 projection = glm::perspective (glm::radians (45.f), 800.f / 600.f, 0.1f, 100.f);
 			glm::mat4 projection = glm::ortho(pGS->projLeft, pGS->projRight, pGS->projBottom, pGS->projTop, pGS->projNear, pGS->projFar);
 
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "projection"), 1, GL_FALSE, glm::value_ptr (projection));
 
-			//glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 			glDrawArrays (GL_TRIANGLES, 0, 36);
 			}
 

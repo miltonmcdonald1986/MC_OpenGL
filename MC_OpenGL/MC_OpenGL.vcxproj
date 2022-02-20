@@ -87,11 +87,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\lib\glad\src\glad.c" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GLFWCallbackFunctions.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="ProjectionOrthographic.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="GLFWCallbackFunctions.h" />
     <ClInclude Include="GlobalState.h" />
     <ClInclude Include="ProjectionOrthographic.h" />

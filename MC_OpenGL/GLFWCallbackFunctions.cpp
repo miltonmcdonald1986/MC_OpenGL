@@ -1,9 +1,12 @@
 #include "GLFWCallbackFunctions.h"
-#include "GlobalState.h"
-#include "ProjectionOrthographic.h"
 
 #include <algorithm>
 #include <iostream>
+
+#include <glm.hpp>
+
+#include "GlobalState.h"
+#include "ProjectionOrthographic.h"
 
 
 auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void
@@ -13,14 +16,13 @@ auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int 
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
     
     float cx = 0.5f*(pGS->projLeft + pGS->projRight);
-    float cy = 0.5f * (pGS->projBottom + pGS->projTop);
+    float cy = 0.5f*(pGS->projBottom + pGS->projTop);
 
     // Before updating the window width and height, get the current 
     // projection value and multiply them by newWidth/oldWidth and newHeight/oldHeight
     // so that the objects remain the same size after the window is resized.
     float dx = pGS->projRight - pGS->projLeft;
     float dy = pGS->projTop - pGS->projBottom;
-    float dz = pGS->projFar - pGS->projNear;
 
     dx *= (float)width/pGS->windowWidth;
     dy *= (float)height/pGS->windowHeight;
@@ -29,7 +31,7 @@ auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int 
     pGS->windowHeight = (float)height;
     pGS->windowWidth = (float)width;
     
-    UpdateProjection(cx, cy, dx, dy, dz, pGS);
+    UpdateProjection(cx, cy, dx, dy, pGS->projNear, pGS->projFar, pGS);
 	}
 
 auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void
@@ -55,19 +57,19 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
 	}
     if ((key == GLFW_KEY_UP) && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        pGS->mixPercentage += 0.02;
+        pGS->mixPercentage += 0.02f;
         pGS->mixPercentage = std::min(pGS->mixPercentage, 1.f);
     }
     if ((key == GLFW_KEY_DOWN) && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        pGS->mixPercentage -= 0.02;
+        pGS->mixPercentage -= 0.02f;
         pGS->mixPercentage = std::max(pGS->mixPercentage, 0.f);
 
         std::cout << pGS->mixPercentage << '\n';
     }
     if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
         {
-        pGS->fit = true;
+        pGS->fitAll = true;
         }
 }
 
@@ -85,14 +87,38 @@ auto MC_OpenGL::GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> voi
 
 auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double yPos) -> void
     {
-    MC_OpenGL::GlobalState *globalState = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+    MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
 
-    globalState->cursorPosXPrev = globalState->cursorPosX;
-    globalState->cursorPosYPrev = globalState->cursorPosY;
+    pGS->cursorPosXPrev = pGS->cursorPosX;
+    pGS->cursorPosYPrev = pGS->cursorPosY;
 
-    globalState->cursorPosX = xPos;
-    globalState->cursorPosY = yPos;
+    pGS->cursorPosX = xPos;
+    pGS->cursorPosY = yPos;
+
+    float cursorDx = static_cast<float>(pGS->cursorPosX - pGS->cursorPosXPrev);
+    float cursorDy = static_cast<float>(pGS->cursorPosY - pGS->cursorPosYPrev);
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT))
+    {
+        float cursorDx = static_cast<float>(pGS->cursorPosX - pGS->cursorPosXPrev);
+        float cursorDy = static_cast<float>(pGS->cursorPosY - pGS->cursorPosYPrev);
+
+        float projDx = pGS->projRight   - pGS->projLeft;
+        float projDy = pGS->projTop     - pGS->projBottom;
+        
+        pGS->projLeft   -= cursorDx * (projDx) / pGS->windowWidth;
+        pGS->projRight  -= cursorDx * (projDx) / pGS->windowWidth;
+        pGS->projBottom += cursorDy * (projDy) / pGS->windowHeight;
+        pGS->projTop    += cursorDy * (projDy) / pGS->windowHeight;
     }
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+    {
+        float angleX = cursorDx * 2.f * glm::pi<float>() / pGS->windowWidth;
+        float angleY = cursorDy * 2.f * glm::pi<float>() / pGS->windowHeight;
+
+        pGS->camera.DoArcballRotation(angleX, angleY);
+        pGS->fitZOnly = true;
+	}
+}
 
 auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yoffset) -> void
 {
@@ -103,17 +129,17 @@ auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yo
 
     float dx = pGS->projRight - pGS->projLeft;
     float dy = pGS->projTop - pGS->projBottom;
-    float dz = pGS->projFar - pGS->projNear;
+
     if (yoffset > 0)
         {
-        dx *= 0.9;
-        dy *= 0.9;
+        dx *= 0.9f;
+        dy *= 0.9f;
         }
-    else
+    else if (yoffset < 0)
         {
-        dx *= 1.1;
-        dy *= 1.1;
+        dx *= 1.1f;
+        dy *= 1.1f;
         }
     
-    UpdateProjection(cx, cy, dx, dy, dz, pGS);
+    UpdateProjection(cx, cy, dx, dy, pGS->projNear, pGS->projFar, pGS);
 }
