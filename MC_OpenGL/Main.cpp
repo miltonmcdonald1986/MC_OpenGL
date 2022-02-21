@@ -591,7 +591,7 @@ int main ()
 			
 			glm::mat4 view = pGS->camera.ViewMatrix();// glm::mat4 (1.f);
 
-			glm::mat4 projection = glm::ortho(pGS->projLeft, pGS->projRight, pGS->projBottom, pGS->projTop, pGS->projNear, pGS->projFar);
+			glm::mat4 projection = pGS->projection.ProjectionMatrix();
 
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
