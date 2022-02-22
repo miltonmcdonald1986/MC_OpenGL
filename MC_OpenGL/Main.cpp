@@ -18,10 +18,11 @@
 #include <Mathematics/Triangle.h>
 #include <Mathematics/Vector3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+//#define STB_IMAGE_IMPLEMENTATION
+//#include <stb_image.h>
 
 #include "Camera.h"
+#include "Drawable.h"
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
 #include "ProjectionOrthographic.h"
@@ -183,7 +184,7 @@ class Triangles : public Drawable
 
 		auto Draw () const -> void
 			{
-			GLsizei numVertices = m_Vertices.size();
+			GLsizei numVertices = (GLsizei)m_Vertices.size();
 
 			glBindVertexArray (m_Vao);
 			if (m_Indices.empty ())
@@ -374,147 +375,17 @@ int main ()
 		std::cerr << i << '\n';
 		return static_cast<int>(e);
 		}
-		
-	float vertices[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	MC_OpenGL::InitDrawables();
+	pGS->projection.ZoomFit(window, pGS->camera.ViewMatrix());
 
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-		};
-
-	std::array<glm::vec3, 8> boundingBox = {
-		glm::vec3(-0.5f, -0.5f, -0.5f),
-		glm::vec3(-0.5f, -0.5f,  0.5f),
-		glm::vec3(-0.5f,  0.5f, -0.5f),
-		glm::vec3(-0.5f,  0.5f,  0.5f),
-		glm::vec3( 0.5f, -0.5f, -0.5f),
-		glm::vec3( 0.5f, -0.5f,  0.5f),
-		glm::vec3( 0.5f,  0.5f, -0.5f),
-		glm::vec3( 0.5f,  0.5f,  0.5f)
-	};
-
-	glm::vec3 cubePositions[] = {
-	glm::vec3 (0.0f,  0.0f,  0.0f),
-	glm::vec3 (2.0f,  5.0f, -15.0f),
-	glm::vec3 (-1.5f, -2.2f, -2.5f),
-	glm::vec3 (-3.8f, -2.0f, -12.3f),
-	glm::vec3 (2.4f, -0.4f, -3.5f),
-	glm::vec3 (-1.7f,  3.0f, -7.5f),
-	glm::vec3 (1.3f, -2.0f, -2.5f),
-	glm::vec3 (1.5f,  2.0f, -2.5f),
-	glm::vec3 (1.5f,  0.2f, -1.5f),
-	glm::vec3 (-1.3f,  1.0f, -1.5f)
-		};
-
-	GLuint vao;
-	glGenVertexArrays (1, &vao);
-	glBindVertexArray (vao);
-
-	GLuint vbo;
-	glGenBuffers (1, &vbo);
-	glBindBuffer (GL_ARRAY_BUFFER, vbo);
-	glBufferData (GL_ARRAY_BUFFER, 180*sizeof(float), vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
-	glEnableVertexAttribArray (0);
-
-	glVertexAttribPointer (1, 2, GL_FLOAT, GL_FALSE, 5*sizeof (float), (void *)(3*sizeof (float)));
-	glEnableVertexAttribArray (1);
-
-	
-	// START TEXTURE STUFF
-	
-	int width, height, nrChannels;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load ("..\\textures\\container.jpg", &width, &height, &nrChannels, 0);
-
-	unsigned int texture0;
-	glGenTextures (1, &texture0);
-	glBindTexture (GL_TEXTURE_2D, texture0);
-
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	if (data)
-		{
-		glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap (GL_TEXTURE_2D);
-		}
-	else
-		{
-		std::cerr << "Error: failed to load texture\n";
-		return static_cast<int>(MC_OpenGL::ErrorCode::ERROR_TEXTURE_FAILED_TO_LOAD);
-		}
-
-	stbi_image_free (data);
-
-	data = stbi_load("..\\textures\\juju.png", &width, &height, &nrChannels, 0);
-	unsigned int texture1;
-	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cerr << "Error: failed to load texture\n";
-		return static_cast<int>(MC_OpenGL::ErrorCode::ERROR_TEXTURE_FAILED_TO_LOAD);
-	}
-
-	stbi_image_free(data);
 
 	// END TEXTURE STUFF
 	
 	glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
 
-	pGS->fitAll = true;
+	//pGS->fitAll = true;
 
 	// Game loop
 	while (!glfwWindowShouldClose (window))
@@ -524,70 +395,23 @@ int main ()
 
 		shader.Use();
 
-		glBindVertexArray(vao);
+		glBindVertexArray(MC_OpenGL::vao);
 
 		glActiveTexture (GL_TEXTURE0);
-		glBindTexture (GL_TEXTURE_2D, texture0);
+		glBindTexture (GL_TEXTURE_2D, MC_OpenGL::texture0);
 		
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture1);
+		glBindTexture(GL_TEXTURE_2D, MC_OpenGL::texture1);
 
 		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerContainer"), 0);
 		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerAwesomeFace"), 1);
 
 		glUniform1f (glGetUniformLocation (shader.GetProgramId (), "mixPercentage"), pGS->mixPercentage);
 
-		if (pGS->fitAll || pGS->fitZOnly)
-			{
-			float x0 = std::numeric_limits<float>::max ();
-			float y0 = std::numeric_limits<float>::max ();
-			float z0 = std::numeric_limits<float>::max ();
-			float x1 = std::numeric_limits<float>::min ();
-			float y1 = std::numeric_limits<float>::min ();
-			float z1 = std::numeric_limits<float>::min ();
-			for (int i = 0; i < 10; ++i)
-			{
-				for (int j = 0; j < boundingBox.size(); ++j)
-				{
-					glm::vec3 ptEyeSpace = pGS->camera.ViewMatrix() * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[j], 1.f);
-					if (pGS->fitAll)
-					{
-						x0 = std::min(x0, ptEyeSpace.x);
-						y0 = std::min(y0, ptEyeSpace.y);
-						x1 = std::max(x1, ptEyeSpace.x);
-						y1 = std::max(y1, ptEyeSpace.y);
-					}
-					z0 = std::min(z0, ptEyeSpace.z);
-					z1 = std::max(z1, ptEyeSpace.z);
-				}
-			}
-
-			float cx = 0.5f * (x0 + x1);
-			float cy = 0.5f * (y0 + y1);
-			float cz = 0.5f * (z0 + z1);
-
-			float dx = x1 - x0;
-			dx *= 1.1f;
-			float dy = y1 - y0;
-			dy *= 1.1f;
-			
-			// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
-			float zNear = -1.f * z1;
-			float zFar = -1.f * z0;
-
-			if (pGS->fitAll)
-				MC_OpenGL::UpdateProjection(cx, cy, dx, dy, zNear, zFar, pGS.get());
-			else
-				MC_OpenGL::UpdateProjection(zNear, zFar, pGS.get());
-
-			pGS->fitAll = false;
-			pGS->fitZOnly = false;
-			}
-
 		for (int i = 0; i < 10; ++i)
 			{
 			glm::mat4 model = glm::mat4 (1.f);
-			model = glm::translate (model, cubePositions[i]);
+			model = glm::translate (model, MC_OpenGL::cubePositions[i]);
 			
 			glm::mat4 view = pGS->camera.ViewMatrix();// glm::mat4 (1.f);
 

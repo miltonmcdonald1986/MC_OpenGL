@@ -14,24 +14,9 @@ auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int 
 	glViewport (0, 0, width, height);
 
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
-    
-    float cx = 0.5f*(pGS->projection.GetLeft() + pGS->projection.GetRight());
-    float cy = 0.5f*(pGS->projection.GetBottom() + pGS->projection.GetTop());
-
-    // Before updating the window width and height, get the current 
-    // projection value and multiply them by newWidth/oldWidth and newHeight/oldHeight
-    // so that the objects remain the same size after the window is resized.
-    float dx = pGS->projection.GetRight() - pGS->projection.GetLeft();
-    float dy = pGS->projection.GetTop() - pGS->projection.GetBottom();
-
-    dx *= (float)width/pGS->windowWidth;
-    dy *= (float)height/pGS->windowHeight;
-
-    // Now update the window info in global state.
-    pGS->windowHeight = (float)height;
+    pGS->projection.Resize(pGS->windowWidth, pGS->windowHeight, (float)width, (float)height);
     pGS->windowWidth = (float)width;
-    
-    UpdateProjection(cx, cy, dx, dy, pGS->projection.GetNear(), pGS->projection.GetFar(), pGS);
+    pGS->windowHeight = (float)height;
 	}
 
 auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int action, int mods) -> void
@@ -69,7 +54,7 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
     }
     if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
         {
-        pGS->fitAll = true;
+        pGS->projection.ZoomFit(window, pGS->camera.ViewMatrix());
         }
 }
 
@@ -102,13 +87,7 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
         float cursorDx = static_cast<float>(pGS->cursorPosX - pGS->cursorPosXPrev);
         float cursorDy = static_cast<float>(pGS->cursorPosY - pGS->cursorPosYPrev);
 
-        float projDx = pGS->projection.GetRight() - pGS->projection.GetLeft();
-        float projDy = pGS->projection.GetTop() - pGS->projection.GetBottom();
-        
-        pGS->projection.SetLeft(pGS->projection.GetLeft() - cursorDx * (projDx) / pGS->windowWidth);
-        pGS->projection.SetRight(pGS->projection.GetRight() - cursorDx * (projDx) / pGS->windowWidth);
-        pGS->projection.SetBottom(pGS->projection.GetBottom() + cursorDy * (projDy) / pGS->windowHeight);
-        pGS->projection.SetTop(pGS->projection.GetTop() + cursorDy * (projDy) / pGS->windowHeight);
+        pGS->projection.Pan(window, cursorDx, cursorDy);
     }
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
     {
@@ -116,30 +95,12 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
         float angleY = cursorDy * 2.f * glm::pi<float>() / pGS->windowHeight;
 
         pGS->camera.DoArcballRotation(angleX, angleY);
-        pGS->fitZOnly = true;
+        pGS->projection.ZoomFit(window, pGS->camera.ViewMatrix(), true);
 	}
 }
 
 auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yoffset) -> void
 {
     MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
-
-    double cx = (pGS->projection.GetLeft() + pGS->projection.GetRight())/2.f;
-    double cy = (pGS->projection.GetBottom() + pGS->projection.GetTop())/2.f;
-
-    float dx = pGS->projection.GetRight() - pGS->projection.GetLeft();
-    float dy = pGS->projection.GetTop() - pGS->projection.GetBottom();
-
-    if (yoffset > 0)
-        {
-        dx *= 0.9f;
-        dy *= 0.9f;
-        }
-    else if (yoffset < 0)
-        {
-        dx *= 1.1f;
-        dy *= 1.1f;
-        }
-    
-    UpdateProjection(cx, cy, dx, dy, pGS->projection.GetNear(), pGS->projection.GetFar(), pGS);
+    pGS->projection.ZoomInOut(yoffset);
 }
