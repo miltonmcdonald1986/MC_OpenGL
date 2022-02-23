@@ -8,9 +8,35 @@
 
 #include <glm.hpp>
 
+#include "Shader.h"
+
 
 namespace MC_OpenGL
 {
+
+
+	class Drawable
+		{
+		public:
+			virtual auto Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void = 0;
+			virtual auto BoundingBox () const -> std::array<glm::vec3, 8> = 0;
+		};
+
+
+	class WoodenBox : public Drawable
+		{
+		public:
+			WoodenBox (const glm::mat4 &modelMatrix);
+
+			auto Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void;
+			auto BoundingBox () const -> std::array<glm::vec3, 8>;
+
+		private:
+			glm::mat4 m_ModelMatrix = glm::mat4(1.f);
+			GLuint m_Vao = 0;
+			Shader m_Shader = Shader();
+			std::array<glm::vec3, 8> m_BoundingBox = std::array<glm::vec3, 8> ();
+		};
 
 
 	auto InitDrawables() -> void;

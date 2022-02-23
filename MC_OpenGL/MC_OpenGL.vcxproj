@@ -98,9 +98,11 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DemoTriangle.h" />
     <ClInclude Include="Drawable.h" />
+    <ClInclude Include="ErrorCode.h" />
     <ClInclude Include="GLFWCallbackFunctions.h" />
     <ClInclude Include="GlobalState.h" />
     <ClInclude Include="ProjectionOrthographic.h" />
+    <ClInclude Include="Shader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

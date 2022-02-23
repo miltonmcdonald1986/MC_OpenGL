@@ -24,6 +24,7 @@
 #include "Camera.h"
 #include "DemoTriangle.h"
 #include "Drawable.h"
+#include "ErrorCode.h"
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
 #include "ProjectionOrthographic.h"
@@ -46,37 +47,6 @@ struct WindowSize
 
 
 namespace MC_OpenGL {
-
-
-enum class ErrorCode
-	{
-	NO_ERROR,
-	ERROR_FRAGMENT_SHADER_COMPILATION_FAILED,
-	ERROR_GLAD_LOAD_GL_LOADER,
-	ERROR_GLFW_CREATE_WINDOW,
-	ERROR_GLFW_WINDOW_IS_NULL,
-	ERROR_SHADER_PROGRAM_LINKING_FAILED,
-	ERROR_TEXTURE_FAILED_TO_LOAD,
-	ERROR_VERTEX_SHADER_COMPILATION_FAILED
-	};
-
-
-class Drawable
-	{
-	public:
-		Drawable ()
-			: m_Vao (0),
-			m_Vbo (0)
-			{
-			}
-
-		virtual auto Draw () const -> void = 0;
-
-	protected:
-		GLuint m_Ebo;
-		GLuint m_Vao;
-		GLuint m_Vbo;
-	};
 
 
 class TriangleWithColorAttribute : public Drawable
@@ -109,6 +79,10 @@ class TriangleWithColorAttribute : public Drawable
 			glDrawArrays (GL_TRIANGLES, 0, 3);
 			glBindVertexArray (0);
 			}
+
+	private:
+		GLuint m_Vao = 0;
+		GLuint m_Vbo = 0;
 	};
 
 
@@ -140,6 +114,9 @@ class Triangle : public Drawable
 
 	private:
 		gte::Triangle3<float> m_GTE_Triangle;
+
+		GLuint m_Vao = 0;
+		GLuint m_Vbo = 0;
 	};
 
 
@@ -198,6 +175,10 @@ class Triangles : public Drawable
 	private:
 		std::vector<int>    m_Indices;
 		std::vector<float>  m_Vertices;
+
+		GLuint m_Vao = 0;
+		GLuint m_Vbo = 0;
+		GLuint m_Ebo = 0;
 	};
 
 
@@ -245,112 +226,6 @@ auto GLFWInit (GLFWwindow *&window, MC_OpenGL::GlobalState *pGS) -> MC_OpenGL::E
 	}
 
 
-class Shader
-	{
-	public:
-		Shader (const std::string &vsFilename, const std::string &fsFilename)
-			: m_ErrorCode (MC_OpenGL::ErrorCode::NO_ERROR)
-			{
-			std::ifstream ifs (vsFilename);
-			std::string line;
-			std::stringstream ss;
-			while (std::getline (ifs, line))
-				ss << line << '\n';
-			ss << '\0';
-			ifs.close ();
-			
-			GLuint vsId = glCreateShader (GL_VERTEX_SHADER);
-			std::string strVsSourceCode = ss.str ();
-			const char *vsSourceCode = strVsSourceCode.c_str();
-			glShaderSource (vsId, 1, &vsSourceCode, NULL);
-			glCompileShader (vsId);
-			GLint success;
-			const int infoLogSize = 512;
-			GLchar infoLog[infoLogSize];
-			glGetShaderiv (vsId, GL_COMPILE_STATUS, &success);
-			if (!success)
-				{
-				glGetShaderInfoLog (vsId, infoLogSize, nullptr, infoLog);
-				std::stringstream ssInfoLog;
-				ssInfoLog << "Error: Vertex shader compilation failed\n" << infoLog << std::endl;
-				m_InfoLog = ssInfoLog.str ();
-				m_ErrorCode = MC_OpenGL::ErrorCode::ERROR_VERTEX_SHADER_COMPILATION_FAILED;
-				return;
-				}
-
-			ifs.open (fsFilename);
-			ss = std::stringstream ();
-			while (std::getline (ifs, line))
-				ss << line << '\n';
-			ss << '\0';
-			ifs.close ();
-			
-			GLuint fsId = glCreateShader (GL_FRAGMENT_SHADER);
-			std::string strFsSourceCode = ss.str ();
-			const char *fsSourceCode = strFsSourceCode.c_str();
-			glShaderSource (fsId, 1, &fsSourceCode, nullptr);
-			glCompileShader (fsId);
-			glGetShaderiv (fsId, GL_COMPILE_STATUS, &success);
-			if (!success)
-				{
-				glGetShaderInfoLog (fsId, infoLogSize, nullptr, infoLog);
-				std::stringstream ssInfoLog;
-				ssInfoLog << "Error: Fragment shader compilation failed\n" << infoLog << std::endl;
-				m_InfoLog = ssInfoLog.str ();
-				m_ErrorCode = MC_OpenGL::ErrorCode::ERROR_FRAGMENT_SHADER_COMPILATION_FAILED;
-				return;
-				}
-
-			m_Id = glCreateProgram ();
-			glAttachShader (m_Id, vsId);
-			glAttachShader (m_Id, fsId);
-			glLinkProgram (m_Id);
-			glGetShaderiv (m_Id, GL_LINK_STATUS, &success);
-			if (!success)
-				{
-				glGetProgramInfoLog (m_Id, infoLogSize, nullptr, infoLog);
-				std::stringstream ssInfoLog;
-				ssInfoLog << "Error: Shader program linking failed\n" << infoLog << std::endl;
-				m_InfoLog = ssInfoLog.str ();
-				m_ErrorCode = MC_OpenGL::ErrorCode::ERROR_SHADER_PROGRAM_LINKING_FAILED;
-				}
-
-			glDeleteShader (vsId);
-			glDeleteShader (vsId);
-			}
-
-		operator bool () const
-			{
-			return m_ErrorCode == MC_OpenGL::ErrorCode::NO_ERROR;
-			}
-
-		auto GetProgramId () const
-			{
-			return m_Id;
-			}
-
-		auto Use () const
-			{
-			glUseProgram (m_Id);
-			}
-
-		auto GetInfo () const -> std::pair<MC_OpenGL::ErrorCode, std::string>
-			{
-			return { m_ErrorCode, m_InfoLog };
-			}
-
-		auto SetUniformFloat1f (const std::string name, float value) const -> void
-			{
-			glUniform1f (glGetUniformLocation (m_Id, name.c_str ()), value);
-			}
-
-	private:
-		GLuint                  m_Id;
-		MC_OpenGL::ErrorCode    m_ErrorCode;
-		std::string             m_InfoLog;
-	};
-
-
 int main ()
 	{
 	pGS = std::make_unique<MC_OpenGL::GlobalState> ();
@@ -371,17 +246,9 @@ int main ()
 
 	glEnable (GL_DEPTH_TEST);
 
-	Shader shader (R"(..\shaders\vsContainer.glsl)", R"(..\shaders\fsContainer.glsl)");
-	if (!shader)
-		{
-		const auto &[e, i] = shader.GetInfo ();
-		std::cerr << i << '\n';
-		return static_cast<int>(e);
-		}
-
 
 	MC_OpenGL::InitDrawables();
-	pGS->projection.ZoomFit(window, pGS->camera.ViewMatrix());
+	pGS->projection.ZoomFit(pGS->camera.ViewMatrix());
 
 
 	// END TEXTURE STUFF
@@ -390,6 +257,12 @@ int main ()
 
 	MC_OpenGL::DemoTriangle demoTriangle;
 
+	std::vector<MC_OpenGL::Drawable *> drawables;
+	for (int i = 0; i < 10; ++i)
+		{
+		drawables.push_back (new MC_OpenGL::WoodenBox (glm::translate (glm::mat4 (1.f), MC_OpenGL::cubePositions[i])));
+		}
+
 	// Game loop
 	while (!glfwWindowShouldClose (window))
 		{
@@ -397,57 +270,29 @@ int main ()
 		glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader.Use ();
+		for (const MC_OpenGL::Drawable *drawable : drawables)
+			drawable->Draw (pGS->camera.ViewMatrix (), pGS->projection.ProjectionMatrix ());
 
-		glBindVertexArray (MC_OpenGL::vao);
+		//// Draw pip window for fun
+		//glViewport (40, 30, 160, 120);
+		//glScissor (40, 30, 160, 120);
+		//glEnable (GL_SCISSOR_TEST);
+		//glClear (GL_DEPTH_BUFFER_BIT);
+		//glDisable (GL_SCISSOR_TEST);
+		////demoTriangle.Draw ();
 
-		glActiveTexture (GL_TEXTURE0);
-		glBindTexture (GL_TEXTURE_2D, MC_OpenGL::texture0);
+		//glm::mat4 model = glm::mat4 (1.f);
+		//model = glm::rotate (model, (float)glfwGetTime (), glm::vec3( 0.1f, 0.2f, 0.3f ));
+		//model = glm::translate (model, MC_OpenGL::cubePositions[0]);
 
-		glActiveTexture (GL_TEXTURE1);
-		glBindTexture (GL_TEXTURE_2D, MC_OpenGL::texture1);
+		//glm::mat4 view = pGS->camera.ViewMatrix ();// glm::mat4 (1.f);
+		//glm::mat4 projection = glm::ortho(-sqrtf(2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f));
 
-		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerContainer"), 0);
-		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerAwesomeFace"), 1);
+		//glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
+		//glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
+		//glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "projection"), 1, GL_FALSE, glm::value_ptr (projection));
 
-		glUniform1f (glGetUniformLocation (shader.GetProgramId (), "mixPercentage"), pGS->mixPercentage);
-
-		for (int i = 0; i < MC_OpenGL::cubePositions.size (); ++i)
-			{
-			glm::mat4 model = glm::mat4 (1.f);
-			model = glm::translate (model, MC_OpenGL::cubePositions[i]);
-
-			glm::mat4 view = pGS->camera.ViewMatrix ();// glm::mat4 (1.f);
-
-			glm::mat4 projection = pGS->projection.ProjectionMatrix ();
-
-			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
-			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
-			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "projection"), 1, GL_FALSE, glm::value_ptr (projection));
-
-			glDrawArrays (GL_TRIANGLES, 0, 36);
-			}
-
-		// Draw pip window for fun
-		glViewport (40, 30, 160, 120);
-		glScissor (40, 30, 160, 120);
-		glEnable (GL_SCISSOR_TEST);
-		glClear (GL_DEPTH_BUFFER_BIT);
-		glDisable (GL_SCISSOR_TEST);
-		//demoTriangle.Draw ();
-
-		glm::mat4 model = glm::mat4 (1.f);
-		model = glm::rotate (model, (float)glfwGetTime (), glm::vec3( 0.1f, 0.2f, 0.3f ));
-		model = glm::translate (model, MC_OpenGL::cubePositions[0]);
-
-		glm::mat4 view = pGS->camera.ViewMatrix ();// glm::mat4 (1.f);
-		glm::mat4 projection = glm::ortho(-sqrtf(2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f));
-
-		glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
-		glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
-		glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "projection"), 1, GL_FALSE, glm::value_ptr (projection));
-
-		glDrawArrays (GL_TRIANGLES, 0, 36);
+		//glDrawArrays (GL_TRIANGLES, 0, 36);
 
 		glfwSwapBuffers (window);
 		glfwPollEvents ();

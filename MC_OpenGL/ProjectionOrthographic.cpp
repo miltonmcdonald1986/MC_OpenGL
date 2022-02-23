@@ -86,7 +86,7 @@ auto MC_OpenGL::ProjectionOrthographic::UpdateProjectionMatrix(float aspectRatio
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::ZoomFit(GLFWwindow *window, const glm::mat4 &viewMatrix, bool fitZOnly) -> void
+auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const glm::mat4 &viewMatrix, bool fitZOnly) -> void
 {
 	float x0 = std::numeric_limits<float>::max();
 	float y0 = std::numeric_limits<float>::max();
@@ -126,7 +126,7 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(GLFWwindow *window, const glm::m
 
 	int windowWidth;
 	int windowHeight;
-	glfwGetWindowSize(window, &windowWidth, &windowHeight);
+	glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
 
 	if (fitZOnly)
 		UpdateProjectionMatrix(zNear, zFar);
@@ -135,15 +135,15 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(GLFWwindow *window, const glm::m
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::ZoomInOutToCursor(GLFWwindow* window, float offset) -> void
+auto MC_OpenGL::ProjectionOrthographic::ZoomInOutToCursor(float offset) -> void
 {
 	double xpos;
 	double ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
+	glfwGetCursorPos(m_Window, &xpos, &ypos);
 
 	int xwid;
 	int ywid;
-	glfwGetWindowSize(window, &xwid, &ywid);
+	glfwGetWindowSize(m_Window, &xwid, &ywid);
 
 	float xpct = xpos / xwid;
 	float ypct = ypos / ywid;

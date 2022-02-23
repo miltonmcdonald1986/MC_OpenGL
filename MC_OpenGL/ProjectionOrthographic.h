@@ -22,8 +22,8 @@ namespace MC_OpenGL
 		auto ProjectionMatrix () const -> glm::mat4;
 		auto Resize(float oldWidth, float oldHeight, float newWidth, float newHeight) -> void;
 		auto SetWindow (GLFWwindow *window) -> void;
-		auto ZoomFit(GLFWwindow *window, const glm::mat4& viewMatrix, bool fitZOnly = false) -> void;
-		auto ZoomInOutToCursor(GLFWwindow* window, float offset) -> void;
+		auto ZoomFit(const glm::mat4& viewMatrix, bool fitZOnly = false) -> void;
+		auto ZoomInOutToCursor(float offset) -> void;
 
 	private:
 		auto UpdateProjectionMatrix(float zNear, float zFar) -> void;
