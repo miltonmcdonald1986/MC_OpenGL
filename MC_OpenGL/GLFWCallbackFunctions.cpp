@@ -102,5 +102,5 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
 auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yoffset) -> void
 {
     MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
-    pGS->projection.ZoomInOut(yoffset);
+    pGS->projection.ZoomInOutToCursor(window, yoffset);
 }

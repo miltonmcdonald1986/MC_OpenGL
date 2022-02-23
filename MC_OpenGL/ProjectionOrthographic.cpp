@@ -129,6 +129,40 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(GLFWwindow *window, const glm::m
 }
 
 
+auto MC_OpenGL::ProjectionOrthographic::ZoomInOutToCursor(GLFWwindow* window, float offset) -> void
+{
+	double xpos;
+	double ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+
+	int xwid;
+	int ywid;
+	glfwGetWindowSize(window, &xwid, &ywid);
+
+	float xpct = xpos / xwid;
+	float ypct = ypos / ywid;
+
+	float xPctProj = m_Left		+ xpct * (m_Right	- m_Left);
+	float yPctProj = m_Bottom	+ ypct * (m_Top		- m_Bottom);
+
+	ZoomInOut(offset);
+
+	float newXPctProj = m_Left		+ xpct * (m_Right	- m_Left);
+	float newYPctProj = m_Bottom	+ ypct * (m_Top		- m_Bottom);
+
+	float xShift = newXPctProj - xPctProj;
+	float yShift = newYPctProj - yPctProj;
+
+	float xShiftPct = xShift / (m_Right	- m_Left);
+	float yShiftPct = yShift / (m_Top	- m_Bottom);
+	
+	xShiftPct *= xwid;
+	yShiftPct *= ywid;
+
+	Pan(window, xShiftPct, yShiftPct);
+}
+
+
 auto MC_OpenGL::ProjectionOrthographic::ZoomInOut(float offset) -> void
 {
 	double cx = (m_Left + m_Right) / 2.f;
