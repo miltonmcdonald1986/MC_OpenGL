@@ -86,7 +86,7 @@ auto MC_OpenGL::ProjectionOrthographic::UpdateProjectionMatrix(float aspectRatio
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const glm::mat4 &viewMatrix, bool fitZOnly) -> void
+auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly) -> void
 {
 	float x0 = std::numeric_limits<float>::max();
 	float y0 = std::numeric_limits<float>::max();
@@ -94,11 +94,13 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const glm::mat4 &viewMatrix, boo
 	float x1 = std::numeric_limits<float>::min();
 	float y1 = std::numeric_limits<float>::min();
 	float z1 = std::numeric_limits<float>::min();
-	for (int i = 0; i < cubePositions.size(); ++i)
+	for (int i = 0; i < drawables.size(); ++i)
 	{
+		const auto &drawable = drawables[i];
+		const auto &boundingBox = drawable->BoundingBox ();
 		for (int j = 0; j < boundingBox.size(); ++j)
 		{
-			glm::vec3 ptEyeSpace = viewMatrix * glm::translate(glm::mat4(1.f), cubePositions[i]) * glm::vec4(boundingBox[j], 1.f);
+			glm::vec3 ptEyeSpace = viewMatrix * drawable->ModelMatrix() * glm::vec4(boundingBox[j], 1.f);
 			if (!fitZOnly)
 			{
 				x0 = std::min(x0, ptEyeSpace.x);

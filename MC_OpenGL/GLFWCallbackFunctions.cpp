@@ -54,7 +54,7 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
     }
     if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
         {
-        pGS->projection.ZoomFit(pGS->camera.ViewMatrix());
+        pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
         }
 }
 
@@ -99,7 +99,7 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
         float angleY = cursorDy * 2.f * glm::pi<float>() / pGS->windowHeight;
 
         pGS->camera.DoArcballRotation(angleX, angleY);
-        pGS->projection.ZoomFit(pGS->camera.ViewMatrix(), true);
+        pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
 	}
 }
 

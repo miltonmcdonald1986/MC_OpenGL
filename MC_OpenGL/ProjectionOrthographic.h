@@ -1,12 +1,16 @@
 #pragma once
 
 
+#include <vector>
+
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
 
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
+
+#include "Drawable.h"
 
 
 namespace MC_OpenGL
@@ -22,7 +26,7 @@ namespace MC_OpenGL
 		auto ProjectionMatrix () const -> glm::mat4;
 		auto Resize(float oldWidth, float oldHeight, float newWidth, float newHeight) -> void;
 		auto SetWindow (GLFWwindow *window) -> void;
-		auto ZoomFit(const glm::mat4& viewMatrix, bool fitZOnly = false) -> void;
+		auto ZoomFit(const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly = false) -> void;
 		auto ZoomInOutToCursor(float offset) -> void;
 
 	private:

@@ -20,6 +20,7 @@ namespace MC_OpenGL
 		public:
 			virtual auto Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void = 0;
 			virtual auto BoundingBox () const -> std::array<glm::vec3, 8> = 0;
+			virtual auto ModelMatrix() const -> glm::mat4 = 0;
 		};
 
 
@@ -30,6 +31,7 @@ namespace MC_OpenGL
 
 			auto Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void;
 			auto BoundingBox () const -> std::array<glm::vec3, 8>;
+			auto ModelMatrix() const -> glm::mat4;
 
 		private:
 			glm::mat4 m_ModelMatrix = glm::mat4(1.f);

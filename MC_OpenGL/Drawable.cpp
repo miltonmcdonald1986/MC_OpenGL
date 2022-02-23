@@ -317,3 +317,9 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 		{
 		return m_BoundingBox;
 		}
+
+
+	auto MC_OpenGL::WoodenBox::ModelMatrix () const -> glm::mat4
+		{
+		return m_ModelMatrix;
+		}

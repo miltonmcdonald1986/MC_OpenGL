@@ -248,7 +248,13 @@ int main ()
 
 
 	MC_OpenGL::InitDrawables();
-	pGS->projection.ZoomFit(pGS->camera.ViewMatrix());
+
+
+	for (int i = 0; i < 10; ++i)
+		{
+		pGS->drawables.push_back (new MC_OpenGL::WoodenBox (glm::translate (glm::mat4 (1.f), MC_OpenGL::cubePositions[i])));
+		}
+	pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
 
 
 	// END TEXTURE STUFF
@@ -257,12 +263,6 @@ int main ()
 
 	MC_OpenGL::DemoTriangle demoTriangle;
 
-	std::vector<MC_OpenGL::Drawable *> drawables;
-	for (int i = 0; i < 10; ++i)
-		{
-		drawables.push_back (new MC_OpenGL::WoodenBox (glm::translate (glm::mat4 (1.f), MC_OpenGL::cubePositions[i])));
-		}
-
 	// Game loop
 	while (!glfwWindowShouldClose (window))
 		{
@@ -270,7 +270,7 @@ int main ()
 		glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		for (const MC_OpenGL::Drawable *drawable : drawables)
+		for (const MC_OpenGL::Drawable *drawable : pGS->drawables)
 			drawable->Draw (pGS->camera.ViewMatrix (), pGS->projection.ProjectionMatrix ());
 
 		//// Draw pip window for fun
