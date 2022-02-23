@@ -22,6 +22,7 @@
 //#include <stb_image.h>
 
 #include "Camera.h"
+#include "DemoTriangle.h"
 #include "Drawable.h"
 #include "GLFWCallbackFunctions.h"
 #include "GlobalState.h"
@@ -387,37 +388,38 @@ int main ()
 	
 	glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
 
-	//pGS->fitAll = true;
+	MC_OpenGL::DemoTriangle demoTriangle;
 
 	// Game loop
 	while (!glfwWindowShouldClose (window))
 		{
-		glClearColor (0.2f, 0.3f, 0.3f, 1.0f);
+		glViewport (0, 0, pGS->windowWidth, pGS->windowHeight);
+		glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader.Use();
+		shader.Use ();
 
-		glBindVertexArray(MC_OpenGL::vao);
+		glBindVertexArray (MC_OpenGL::vao);
 
 		glActiveTexture (GL_TEXTURE0);
 		glBindTexture (GL_TEXTURE_2D, MC_OpenGL::texture0);
-		
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, MC_OpenGL::texture1);
+
+		glActiveTexture (GL_TEXTURE1);
+		glBindTexture (GL_TEXTURE_2D, MC_OpenGL::texture1);
 
 		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerContainer"), 0);
 		glUniform1i (glGetUniformLocation (shader.GetProgramId (), "samplerAwesomeFace"), 1);
 
 		glUniform1f (glGetUniformLocation (shader.GetProgramId (), "mixPercentage"), pGS->mixPercentage);
 
-		for (int i = 0; i < MC_OpenGL::cubePositions.size(); ++i)
+		for (int i = 0; i < MC_OpenGL::cubePositions.size (); ++i)
 			{
 			glm::mat4 model = glm::mat4 (1.f);
 			model = glm::translate (model, MC_OpenGL::cubePositions[i]);
-			
-			glm::mat4 view = pGS->camera.ViewMatrix();// glm::mat4 (1.f);
 
-			glm::mat4 projection = pGS->projection.ProjectionMatrix();
+			glm::mat4 view = pGS->camera.ViewMatrix ();// glm::mat4 (1.f);
+
+			glm::mat4 projection = pGS->projection.ProjectionMatrix ();
 
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
 			glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
@@ -425,6 +427,27 @@ int main ()
 
 			glDrawArrays (GL_TRIANGLES, 0, 36);
 			}
+
+		// Draw pip window for fun
+		glViewport (40, 30, 160, 120);
+		glScissor (40, 30, 160, 120);
+		glEnable (GL_SCISSOR_TEST);
+		glClear (GL_DEPTH_BUFFER_BIT);
+		glDisable (GL_SCISSOR_TEST);
+		//demoTriangle.Draw ();
+
+		glm::mat4 model = glm::mat4 (1.f);
+		model = glm::rotate (model, (float)glfwGetTime (), glm::vec3( 0.1f, 0.2f, 0.3f ));
+		model = glm::translate (model, MC_OpenGL::cubePositions[0]);
+
+		glm::mat4 view = pGS->camera.ViewMatrix ();// glm::mat4 (1.f);
+		glm::mat4 projection = glm::ortho(-sqrtf(2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f));
+
+		glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
+		glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
+		glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "projection"), 1, GL_FALSE, glm::value_ptr (projection));
+
+		glDrawArrays (GL_TRIANGLES, 0, 36);
 
 		glfwSwapBuffers (window);
 		glfwPollEvents ();
