@@ -8,19 +8,19 @@ MC_OpenGL::ProjectionOrthographic::ProjectionOrthographic()
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::Pan(GLFWwindow *window, float dx, float dy) -> void
+auto MC_OpenGL::ProjectionOrthographic::Pan(float cursorDx, float cursorDy) -> void
 {
 	float projDx = m_Right - m_Left;
 	float projDy = m_Top - m_Bottom;
 
 	int windowWidth;
 	int windowHeight;
-	glfwGetWindowSize(window, &windowWidth, &windowHeight);
+	glfwGetWindowSize (m_Window, &windowWidth, &windowHeight);
 
-	m_Left = m_Left - dx * (projDx) / windowWidth;
-	m_Right = m_Right - dx * (projDx) / windowWidth;
-	m_Bottom = m_Bottom + dy * (projDy) / windowHeight;
-	m_Top = m_Top + dy * (projDy) / windowHeight;
+	m_Left		= m_Left	- cursorDx * (projDx) / static_cast<float>(windowWidth);
+	m_Right		= m_Right	- cursorDx * (projDx) / static_cast<float>(windowWidth);
+	m_Bottom	= m_Bottom	+ cursorDy * (projDy) / static_cast<float>(windowHeight);
+	m_Top		= m_Top		+ cursorDy * (projDy) / static_cast<float>(windowHeight);
 }
 
 
@@ -45,6 +45,12 @@ auto MC_OpenGL::ProjectionOrthographic::Resize(float oldWidth, float oldHeight, 
 	dy *= newHeight / oldHeight;
 
 	UpdateProjectionMatrix(newWidth/newHeight, cx, cy, dx, dy, m_Near, m_Far);
+}
+
+
+auto MC_OpenGL::ProjectionOrthographic::SetWindow (GLFWwindow *window) -> void
+{
+	m_Window = window;
 }
 
 
@@ -88,7 +94,7 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(GLFWwindow *window, const glm::m
 	float x1 = std::numeric_limits<float>::min();
 	float y1 = std::numeric_limits<float>::min();
 	float z1 = std::numeric_limits<float>::min();
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < cubePositions.size(); ++i)
 	{
 		for (int j = 0; j < boundingBox.size(); ++j)
 		{
@@ -159,7 +165,7 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomInOutToCursor(GLFWwindow* window, fl
 	xShiftPct *= xwid;
 	yShiftPct *= ywid;
 
-	Pan(window, xShiftPct, yShiftPct);
+	Pan(xShiftPct, yShiftPct);
 }
 
 

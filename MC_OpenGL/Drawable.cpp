@@ -63,7 +63,7 @@ std::array<glm::vec3, 8> MC_OpenGL::boundingBox = {
 };
 
 
-glm::vec3 MC_OpenGL::cubePositions[] = {
+std::vector<glm::vec3> MC_OpenGL::cubePositions = {
 	glm::vec3(0.0f,  0.0f,  0.0f),
 	glm::vec3(2.0f,  5.0f, -15.0f),
 	glm::vec3(-1.5f, -2.2f, -2.5f),

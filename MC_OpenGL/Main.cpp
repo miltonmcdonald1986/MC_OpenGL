@@ -356,6 +356,8 @@ int main ()
 
 	GLFWwindow *window = nullptr;
 	MC_OpenGL::ErrorCode errorCode = GLFWInit (window, pGS.get());
+	pGS->projection.SetWindow (window);
+
 	switch (errorCode)
 		{
 		case MC_OpenGL::ErrorCode::NO_ERROR:
@@ -408,7 +410,7 @@ int main ()
 
 		glUniform1f (glGetUniformLocation (shader.GetProgramId (), "mixPercentage"), pGS->mixPercentage);
 
-		for (int i = 0; i < 10; ++i)
+		for (int i = 0; i < MC_OpenGL::cubePositions.size(); ++i)
 			{
 			glm::mat4 model = glm::mat4 (1.f);
 			model = glm::translate (model, MC_OpenGL::cubePositions[i]);

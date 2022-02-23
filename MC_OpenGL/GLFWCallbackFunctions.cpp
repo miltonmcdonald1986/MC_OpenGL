@@ -87,7 +87,11 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
         float cursorDx = static_cast<float>(pGS->cursorPosX - pGS->cursorPosXPrev);
         float cursorDy = static_cast<float>(pGS->cursorPosY - pGS->cursorPosYPrev);
 
-        pGS->projection.Pan(window, cursorDx, cursorDy);
+        int windowWidth;
+        int windowHeight;
+        glfwGetWindowSize (window, &windowWidth, &windowHeight);
+
+        pGS->projection.Pan (cursorDx, cursorDy);
     }
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
     {

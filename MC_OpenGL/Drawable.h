@@ -2,6 +2,7 @@
 
 
 #include <array>
+#include <vector>
 
 #include <glad/glad.h>
 
@@ -17,7 +18,7 @@ namespace MC_OpenGL
 	extern float vertices[];
 	extern GLuint vao;
 	extern std::array<glm::vec3, 8> boundingBox;
-	extern glm::vec3 cubePositions[];
+	extern std::vector<glm::vec3> cubePositions;
 	extern unsigned int texture0;
 	extern unsigned int texture1;
 
