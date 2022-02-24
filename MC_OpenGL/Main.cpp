@@ -49,86 +49,134 @@ struct WindowSize
 namespace MC_OpenGL {
 
 
-class TriangleWithColorAttribute : public Drawable
-	{
-	public:
-		TriangleWithColorAttribute (const std::array<gte::Vector3<float>, 3> &vertices, const std::array<gte::Vector3<float>, 3> &colors)
-			{
-			glGenVertexArrays (1, &m_Vao);
-			glBindVertexArray (m_Vao);
-
-			glGenBuffers (1, &m_Vbo);
-			glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
-			const std::array<float, 18> vboVertices ({
-				vertices[0][0], vertices[0][1], vertices[0][2], colors[0][0], colors[0][1], colors[0][2],
-				vertices[1][0], vertices[1][1], vertices[1][2], colors[1][0], colors[1][1], colors[1][2],
-				vertices[2][0], vertices[2][1], vertices[2][2], colors[2][0], colors[2][1], colors[2][2]
-				});
-			glBufferData (GL_ARRAY_BUFFER, vboVertices.size ()*sizeof (float), vboVertices.data (), GL_STATIC_DRAW);
-
-			glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), nullptr);
-			glEnableVertexAttribArray (0);
-
-			glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void *)(3 * sizeof (float)));
-			glEnableVertexAttribArray (1);
-			}
-
-		auto Draw () const -> void
-			{
-			glBindVertexArray (m_Vao);
-			glDrawArrays (GL_TRIANGLES, 0, 3);
-			glBindVertexArray (0);
-			}
-
-	private:
-		GLuint m_Vao = 0;
-		GLuint m_Vbo = 0;
-	};
-
-
-class Triangle : public Drawable
-	{
-	public:
-		Triangle (const gte::Vector3<float> &v0, const gte::Vector3<float> &v1, const gte::Vector3<float> &v2)
-			: Drawable (),
-			m_GTE_Triangle (v0, v1, v2)
-			{
-			glGenVertexArrays (1, &m_Vao);
-			glBindVertexArray (m_Vao);
-
-			glGenBuffers (1, &m_Vbo);
-			glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
-			const std::array<float, 9> vertices ({ v0[0], v0[1], v0[2], v1[0], v1[1], v1[2], v2[0], v2[1], v2[2] });
-			glBufferData (GL_ARRAY_BUFFER, vertices.size () * sizeof (float), vertices.data (), GL_STATIC_DRAW);
-
-			glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-			glEnableVertexAttribArray (0);
-			}
-
-		auto Draw () const -> void
-			{
-			glBindVertexArray (m_Vao);
-			glDrawArrays (GL_TRIANGLES, 0, 3);
-			glBindVertexArray (0);
-			}
-
-	private:
-		gte::Triangle3<float> m_GTE_Triangle;
-
-		GLuint m_Vao = 0;
-		GLuint m_Vbo = 0;
-	};
+//class TriangleWithColorAttribute : public Drawable
+//	{
+//	public:
+//		TriangleWithColorAttribute (const std::array<gte::Vector3<float>, 3> &vertices, const std::array<gte::Vector3<float>, 3> &colors)
+//			{
+//			glGenVertexArrays (1, &m_Vao);
+//			glBindVertexArray (m_Vao);
+//
+//			glGenBuffers (1, &m_Vbo);
+//			glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
+//			const std::array<float, 18> vboVertices ({
+//				vertices[0][0], vertices[0][1], vertices[0][2], colors[0][0], colors[0][1], colors[0][2],
+//				vertices[1][0], vertices[1][1], vertices[1][2], colors[1][0], colors[1][1], colors[1][2],
+//				vertices[2][0], vertices[2][1], vertices[2][2], colors[2][0], colors[2][1], colors[2][2]
+//				});
+//			glBufferData (GL_ARRAY_BUFFER, vboVertices.size ()*sizeof (float), vboVertices.data (), GL_STATIC_DRAW);
+//
+//			glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), nullptr);
+//			glEnableVertexAttribArray (0);
+//
+//			glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void *)(3 * sizeof (float)));
+//			glEnableVertexAttribArray (1);
+//			}
+//
+//		auto Draw () const -> void
+//			{
+//			glBindVertexArray (m_Vao);
+//			glDrawArrays (GL_TRIANGLES, 0, 3);
+//			glBindVertexArray (0);
+//			}
+//
+//	private:
+//		GLuint m_Vao = 0;
+//		GLuint m_Vbo = 0;
+//	};
+//
+//
+//class Triangle : public Drawable
+//	{
+//	public:
+//		Triangle (const gte::Vector3<float> &v0, const gte::Vector3<float> &v1, const gte::Vector3<float> &v2)
+//			: Drawable (),
+//			m_GTE_Triangle (v0, v1, v2)
+//			{
+//			glGenVertexArrays (1, &m_Vao);
+//			glBindVertexArray (m_Vao);
+//
+//			glGenBuffers (1, &m_Vbo);
+//			glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
+//			const std::array<float, 9> vertices ({ v0[0], v0[1], v0[2], v1[0], v1[1], v1[2], v2[0], v2[1], v2[2] });
+//			glBufferData (GL_ARRAY_BUFFER, vertices.size () * sizeof (float), vertices.data (), GL_STATIC_DRAW);
+//
+//			glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+//			glEnableVertexAttribArray (0);
+//			}
+//
+//		auto Draw () const -> void
+//			{
+//			glBindVertexArray (m_Vao);
+//			glDrawArrays (GL_TRIANGLES, 0, 3);
+//			glBindVertexArray (0);
+//			}
+//
+//	private:
+//		gte::Triangle3<float> m_GTE_Triangle;
+//
+//		GLuint m_Vao = 0;
+//		GLuint m_Vbo = 0;
+//	};
 
 
 class Triangles : public Drawable
 	{
 	public:
-
-		Triangles (const std::vector<float> &vertices, const std::vector<int> &indices)
-			: Drawable (),
-			m_Indices (indices),
-			m_Vertices (vertices)
+		Triangles (const std::string &stl)
 			{
+			m_Shader = Shader(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicCoordinateSystems.glsl)");
+			m_ModelMatrix = glm::mat4(1.f);
+
+			std::vector<float> vertices;
+
+			std::ifstream ifs(stl);
+			std::string line;
+			while (std::getline(ifs, line))
+			{
+				std::stringstream ss(line);
+				std::string firstWord;
+				ss >> firstWord;
+				if (firstWord == "vertex")
+				{
+					float x;
+					float y;
+					float z;
+					ss >> x >> y >> z;
+					
+					vertices.push_back(x);
+					vertices.push_back(y);
+					vertices.push_back(z);
+				}
+			}
+			m_NumVertices = vertices.size();
+
+			float x0 = std::numeric_limits<float>::max();
+			float y0 = std::numeric_limits<float>::max();
+			float z0 = std::numeric_limits<float>::max();
+			float x1 = std::numeric_limits<float>::min();
+			float y1 = std::numeric_limits<float>::min();
+			float z1 = std::numeric_limits<float>::min();
+			for (int i = 0; i < vertices.size(); i += 3)
+			{
+				x0 = std::min(x0, vertices[i]);
+				y0 = std::min(y0, vertices[i + 1]);
+				x1 = std::max(x1, vertices[i]);
+				y1 = std::max(y1, vertices[i + 1]);
+				z0 = std::min(z0, vertices[i + 2]);
+				z1 = std::max(z1, vertices[i + 2]);
+			}
+			m_BoundingBox = std::array<glm::vec3, 8>{
+				glm::vec3(x0, y0, z0),
+				glm::vec3(x0, y0, z1),
+				glm::vec3(x0, y1, z0),
+				glm::vec3(x0, y1, z1),
+				glm::vec3(x1, y0, z0),
+				glm::vec3(x1, y0, z1),
+				glm::vec3(x1, y1, z0),
+				glm::vec3(x1, y1, z1)
+				};
+
 			glGenVertexArrays (1, &m_Vao);
 			glBindVertexArray (m_Vao);
 
@@ -136,46 +184,45 @@ class Triangles : public Drawable
 			glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
 			glBufferData (GL_ARRAY_BUFFER, vertices.size () * sizeof (float), vertices.data (), GL_STATIC_DRAW);
 
-			glGenBuffers (1, &m_Ebo);
-			glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_Ebo);
-			glBufferData (GL_ELEMENT_ARRAY_BUFFER, indices.size () * sizeof (float), indices.data (), GL_STATIC_DRAW);
-
 			glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 			glEnableVertexAttribArray (0);
 			}
 
-		Triangles (const std::vector<float> &vertices)
-			: Drawable (),
-			m_Indices (0),
-			m_Vertices (vertices)
+		auto Draw (const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) const -> void
 			{
-			glGenVertexArrays (1, &m_Vao);
-			glBindVertexArray (m_Vao);
+			//GLsizei numVertices = (GLsizei)m_Vertices.size();
 
-			glGenBuffers (1, &m_Vbo);
-			glBindBuffer (GL_ARRAY_BUFFER, m_Vbo);
-			glBufferData (GL_ARRAY_BUFFER, vertices.size () * sizeof (float), vertices.data (), GL_STATIC_DRAW);
+			m_Shader.Use();
 
-			glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-			glEnableVertexAttribArray (0);
-			}
-
-		auto Draw () const -> void
-			{
-			GLsizei numVertices = (GLsizei)m_Vertices.size();
+			glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "model"), 1, GL_FALSE, glm::value_ptr(m_ModelMatrix));
+			glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "view"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
+			glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "projection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
 			glBindVertexArray (m_Vao);
 			if (m_Indices.empty ())
-				glDrawArrays (GL_TRIANGLES, 0, numVertices);
+				glDrawArrays (GL_TRIANGLES, 0, m_NumVertices);
 			else
-				glDrawElements (GL_TRIANGLES, numVertices, GL_UNSIGNED_INT, 0);
+				glDrawElements (GL_TRIANGLES, m_NumVertices, GL_UNSIGNED_INT, 0);
 			glBindVertexArray (0);
 			}
 
-	private:
-		std::vector<int>    m_Indices;
-		std::vector<float>  m_Vertices;
+		auto BoundingBox() const -> std::array<glm::vec3, 8>
+		{
+			return m_BoundingBox;
+		}
 
+		auto ModelMatrix() const -> glm::mat4
+		{
+			return m_ModelMatrix;
+		}
+
+	private:
+		glm::mat4					m_ModelMatrix;
+		Shader						m_Shader;
+		std::array<glm::vec3, 8>	m_BoundingBox;
+		std::vector<int>			m_Indices;
+		std::vector<float>			m_Vertices;
+		GLuint m_NumVertices;
 		GLuint m_Vao = 0;
 		GLuint m_Vbo = 0;
 		GLuint m_Ebo = 0;
@@ -250,10 +297,11 @@ int main ()
 	MC_OpenGL::InitDrawables();
 
 
-	for (int i = 0; i < 10; ++i)
-		{
-		pGS->drawables.push_back (new MC_OpenGL::WoodenBox (glm::translate (glm::mat4 (1.f), MC_OpenGL::cubePositions[i])));
-		}
+	//for (int i = 0; i < 10; ++i)
+	//	{
+	//	pGS->drawables.push_back (new MC_OpenGL::WoodenBox (glm::translate (glm::mat4 (1.f), MC_OpenGL::cubePositions[i])));
+	//	}
+	pGS->drawables.push_back(new MC_OpenGL::Triangles("C:\\cncm\\ncfiles\\LT1 090 No Plate.stl"));
 	pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
 
 
@@ -262,6 +310,7 @@ int main ()
 	glfwGetCursorPos (window, &pGS->cursorPosX, &pGS->cursorPosY);
 
 	MC_OpenGL::DemoTriangle demoTriangle;
+	//MC_OpenGL::Triangles triangles("C:\\cncm\\ncfiles\\LT1 090 No Plate.stl");
 
 	// Game loop
 	while (!glfwWindowShouldClose (window))
@@ -272,27 +321,6 @@ int main ()
 
 		for (const MC_OpenGL::Drawable *drawable : pGS->drawables)
 			drawable->Draw (pGS->camera.ViewMatrix (), pGS->projection.ProjectionMatrix ());
-
-		//// Draw pip window for fun
-		//glViewport (40, 30, 160, 120);
-		//glScissor (40, 30, 160, 120);
-		//glEnable (GL_SCISSOR_TEST);
-		//glClear (GL_DEPTH_BUFFER_BIT);
-		//glDisable (GL_SCISSOR_TEST);
-		////demoTriangle.Draw ();
-
-		//glm::mat4 model = glm::mat4 (1.f);
-		//model = glm::rotate (model, (float)glfwGetTime (), glm::vec3( 0.1f, 0.2f, 0.3f ));
-		//model = glm::translate (model, MC_OpenGL::cubePositions[0]);
-
-		//glm::mat4 view = pGS->camera.ViewMatrix ();// glm::mat4 (1.f);
-		//glm::mat4 projection = glm::ortho(-sqrtf(2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f), -sqrtf (2.f), sqrtf (2.f));
-
-		//glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (model));
-		//glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (view));
-		//glUniformMatrix4fv (glGetUniformLocation (shader.GetProgramId (), "projection"), 1, GL_FALSE, glm::value_ptr (projection));
-
-		//glDrawArrays (GL_TRIANGLES, 0, 36);
 
 		glfwSwapBuffers (window);
 		glfwPollEvents ();
