@@ -155,70 +155,9 @@ auto MC_OpenGL::InitDrawables() -> void
 
 
 MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
+	: Cube(modelMatrix)
 	{
-	m_ModelMatrix = modelMatrix;
-
-	float vertices[180] = {
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-		};
-
-	glGenVertexArrays (1, &m_Vao);
-	glBindVertexArray (m_Vao);
-
-	GLuint vbo;
-	glGenBuffers (1, &vbo);
-	glBindBuffer (GL_ARRAY_BUFFER, vbo);
-	glBufferData (GL_ARRAY_BUFFER, 180 * sizeof (float), vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof (float), (void *)0);
-	glEnableVertexAttribArray (0);
-
-	glVertexAttribPointer (1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof (float), (void *)(3 * sizeof (float)));
-	glEnableVertexAttribArray (1);
-
-
 	// START TEXTURE STUFF
-
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load (true);
 	unsigned char *data = stbi_load ("..\\textures\\container.jpg", &width, &height, &nrChannels, 0);
@@ -266,18 +205,6 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 
 	stbi_image_free (data);
 
-	m_BoundingBox = std::array<glm::vec3, 8>
-		{
-		glm::vec3 (-0.5f, -0.5f, -0.5f),
-		glm::vec3 (-0.5f, -0.5f,  0.5f),
-		glm::vec3 (-0.5f,  0.5f, -0.5f),
-		glm::vec3 (-0.5f,  0.5f,  0.5f),
-		glm::vec3 (0.5f, -0.5f, -0.5f),
-		glm::vec3 (0.5f, -0.5f,  0.5f),
-		glm::vec3 (0.5f,  0.5f, -0.5f),
-		glm::vec3 (0.5f,  0.5f,  0.5f)
-		};
-
 	m_Shader = Shader (R"(..\shaders\vsContainer.glsl)", R"(..\shaders\fsContainer.glsl)");
 	if (!m_Shader)
 		{
@@ -286,7 +213,6 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 		//return static_cast<int>(e);
 		}
 	}
-
 
 	auto MC_OpenGL::WoodenBox::Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void
 		{
@@ -313,13 +239,110 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 		}
 
 
-	auto MC_OpenGL::WoodenBox::BoundingBox () const -> std::array<glm::vec3, 8>
+	MC_OpenGL::Cube::Cube(const glm::mat4& modelMatrix)
+	{
+		m_ModelMatrix = modelMatrix;
+
+		float vertices[180] = {
+			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+			 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+			 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+			 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+			 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+			 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+			 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+			-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+			-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+			-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+			-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+			 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+			 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+			 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+			 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+			 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+			 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+			 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+			 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+			 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+			 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+			 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+			 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+			-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+		};
+
+		glGenVertexArrays(1, &m_Vao);
+		glBindVertexArray(m_Vao);
+
+		GLuint vbo;
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, 180 * sizeof(float), vertices, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+
+		m_BoundingBox = std::array<glm::vec3, 8>
+		{
+			glm::vec3(-0.5f, -0.5f, -0.5f),
+				glm::vec3(-0.5f, -0.5f, 0.5f),
+				glm::vec3(-0.5f, 0.5f, -0.5f),
+				glm::vec3(-0.5f, 0.5f, 0.5f),
+				glm::vec3(0.5f, -0.5f, -0.5f),
+				glm::vec3(0.5f, -0.5f, 0.5f),
+				glm::vec3(0.5f, 0.5f, -0.5f),
+				glm::vec3(0.5f, 0.5f, 0.5f)
+		};
+
+		m_Shader = Shader(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicCoordinateSystems.glsl)");
+		if (!m_Shader)
+		{
+			const auto& [e, i] = m_Shader.GetInfo();
+			std::cerr << i << '\n';
+			//return static_cast<int>(e);
+		}
+	}
+
+
+	auto MC_OpenGL::Cube::Draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) const -> void
+	{
+		m_Shader.Use();
+
+		glBindVertexArray(m_Vao);
+
+		glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "model"), 1, GL_FALSE, glm::value_ptr(m_ModelMatrix));
+		glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "view"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
+		glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "projection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+
+	auto MC_OpenGL::Cube::BoundingBox () const -> std::array<glm::vec3, 8>
 		{
 		return m_BoundingBox;
 		}
 
 
-	auto MC_OpenGL::WoodenBox::ModelMatrix () const -> glm::mat4
+	auto MC_OpenGL::Cube::ModelMatrix () const -> glm::mat4
 		{
 		return m_ModelMatrix;
 		}

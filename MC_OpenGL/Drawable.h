@@ -24,20 +24,30 @@ namespace MC_OpenGL
 		};
 
 
-	class WoodenBox : public Drawable
+	class Cube : public Drawable
+	{
+	public:
+		Cube(const glm::mat4& modelMatrix);
+
+		virtual auto Draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) const -> void;
+
+		auto BoundingBox() const->std::array<glm::vec3, 8>;
+		auto ModelMatrix() const->glm::mat4;
+
+	protected:
+		glm::mat4					m_ModelMatrix	= glm::mat4(1.f);
+		GLuint						m_Vao			= 0;
+		Shader						m_Shader		= Shader();
+		std::array<glm::vec3, 8>	m_BoundingBox	= std::array<glm::vec3, 8>();
+	};
+
+
+	class WoodenBox : public Cube
 		{
 		public:
 			WoodenBox (const glm::mat4 &modelMatrix);
 
 			auto Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void;
-			auto BoundingBox () const -> std::array<glm::vec3, 8>;
-			auto ModelMatrix() const -> glm::mat4;
-
-		private:
-			glm::mat4 m_ModelMatrix = glm::mat4(1.f);
-			GLuint m_Vao = 0;
-			Shader m_Shader = Shader();
-			std::array<glm::vec3, 8> m_BoundingBox = std::array<glm::vec3, 8> ();
 		};
 
 
