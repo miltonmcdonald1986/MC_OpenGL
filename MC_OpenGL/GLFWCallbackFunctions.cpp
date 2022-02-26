@@ -25,33 +25,44 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
 
     if ((mods & GLFW_MOD_ALT) != 0)
     {
+        if ((key == GLFW_KEY_B) && (action == GLFW_PRESS))
+        {
+            pGS->camera.SetViewBack();
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+        }
         if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
         {
-            pGS->camera.SetViewLeft();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+            pGS->camera.SetViewFront();
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
         }
         if ((key == GLFW_KEY_I) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewIsometric();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+        }
+        if ((key == GLFW_KEY_L) && (action == GLFW_PRESS))
+        {
+            pGS->camera.SetViewLeft();
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
         }
         if ((key == GLFW_KEY_R) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewRight();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
         }
         if ((key == GLFW_KEY_T) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewTop();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
         }
     }
-
-	if ((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS))
-		glfwSetWindowShouldClose(window, true);
-	if ((key == GLFW_KEY_F2) && (action == GLFW_PRESS || action == GLFW_REPEAT))
-	{
-        switch (pGS->polygonMode)
+    else
+    {
+        if ((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS))
+            glfwSetWindowShouldClose(window, true);
+        if ((key == GLFW_KEY_F2) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        {
+            switch (pGS->polygonMode)
             {
             case GL_LINE:
             default:
@@ -62,24 +73,25 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
                 break;
             }
 
-        glPolygonMode (GL_FRONT_AND_BACK, pGS->polygonMode);
-	}
-    if ((key == GLFW_KEY_UP) && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    {
-        pGS->mixPercentage += 0.02f;
-        pGS->mixPercentage = std::min(pGS->mixPercentage, 1.f);
-    }
-    if ((key == GLFW_KEY_DOWN) && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    {
-        pGS->mixPercentage -= 0.02f;
-        pGS->mixPercentage = std::max(pGS->mixPercentage, 0.f);
-
-        std::cout << pGS->mixPercentage << '\n';
-    }
-    if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
-        {
-        pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+            glPolygonMode(GL_FRONT_AND_BACK, pGS->polygonMode);
         }
+        if ((key == GLFW_KEY_UP) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        {
+            pGS->mixPercentage += 0.02f;
+            pGS->mixPercentage = std::min(pGS->mixPercentage, 1.f);
+        }
+        if ((key == GLFW_KEY_DOWN) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        {
+            pGS->mixPercentage -= 0.02f;
+            pGS->mixPercentage = std::max(pGS->mixPercentage, 0.f);
+
+            std::cout << pGS->mixPercentage << '\n';
+        }
+        if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
+        {
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+        }
+    }
 }
 
 auto MC_OpenGL::GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> void

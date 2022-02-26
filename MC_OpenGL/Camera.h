@@ -21,6 +21,8 @@ namespace MC_OpenGL
 		auto DoArcballRotation(float angleX, float angleY)	-> void;
 		auto UpdateViewMatrix()								-> void;
 		auto SetViewIsometric()								-> void;
+		auto SetViewBack()									-> void;
+		auto SetViewFront()									-> void;
 		auto SetViewLeft()									-> void;
 		auto SetViewRight()									-> void;
 		auto SetViewTop()									-> void;

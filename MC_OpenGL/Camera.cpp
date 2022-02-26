@@ -34,17 +34,36 @@ auto MC_OpenGL::Camera::UpdateViewMatrix() -> void
 	m_View = glm::lookAt(m_Eye, m_Center, m_Up);
 }
 
+
 auto MC_OpenGL::Camera::SetViewIsometric() -> void
 {
 	// TODO
 }
 
 
-auto MC_OpenGL::Camera::SetViewLeft() -> void
+auto MC_OpenGL::Camera::SetViewBack() -> void
+{
+	m_Right = glm::vec3(-1.f, 0.f, 0.f);
+	m_Up = glm::vec3(0.f, 0.f, 1.f);
+	m_Eye = glm::vec3(0.f, 1.f, 0.f);
+	UpdateViewMatrix();
+}
+
+
+auto MC_OpenGL::Camera::SetViewFront() -> void
 {
 	m_Right = glm::vec3(1.f, 0.f, 0.f);
 	m_Up = glm::vec3(0.f, 0.f, 1.f);
 	m_Eye = glm::vec3(0.f, -1.f, 0.f);
+	UpdateViewMatrix();
+}
+
+
+auto MC_OpenGL::Camera::SetViewLeft() -> void
+{
+	m_Right = glm::vec3(0.f, -1.f, 0.f);
+	m_Up = glm::vec3(0.f, 0.f, 1.f);
+	m_Eye = glm::vec3(-1.f, 0.f, 0.f);
 	UpdateViewMatrix();
 }
 

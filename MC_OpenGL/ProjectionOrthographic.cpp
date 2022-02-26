@@ -123,8 +123,8 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const std::vector<Drawable *> &d
 	dy *= 1.1f;
 
 	// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
-	float zNear = -1.f * z1;
-	float zFar = -1.f * z0;
+	float zNear = -1.1f * z1;
+	float zFar = -1.1f * z0;
 
 	int windowWidth;
 	int windowHeight;
