@@ -23,6 +23,30 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
 {
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
 
+    if ((mods & GLFW_MOD_ALT) != 0)
+    {
+        if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
+        {
+            pGS->camera.SetViewLeft();
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+        }
+        if ((key == GLFW_KEY_I) && (action == GLFW_PRESS))
+        {
+            pGS->camera.SetViewIsometric();
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+        }
+        if ((key == GLFW_KEY_R) && (action == GLFW_PRESS))
+        {
+            pGS->camera.SetViewRight();
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+        }
+        if ((key == GLFW_KEY_T) && (action == GLFW_PRESS))
+        {
+            pGS->camera.SetViewTop();
+            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+        }
+    }
+
 	if ((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS))
 		glfwSetWindowShouldClose(window, true);
 	if ((key == GLFW_KEY_F2) && (action == GLFW_PRESS || action == GLFW_REPEAT))

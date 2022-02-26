@@ -20,6 +20,10 @@ namespace MC_OpenGL
 
 		auto DoArcballRotation(float angleX, float angleY)	-> void;
 		auto UpdateViewMatrix()								-> void;
+		auto SetViewIsometric()								-> void;
+		auto SetViewLeft()									-> void;
+		auto SetViewRight()									-> void;
+		auto SetViewTop()									-> void;
 		auto ViewMatrix() const								-> glm::mat4;
 
 	private:
