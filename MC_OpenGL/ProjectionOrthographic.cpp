@@ -8,6 +8,49 @@ MC_OpenGL::ProjectionOrthographic::ProjectionOrthographic()
 }
 
 
+auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void
+{
+	float x0 = std::numeric_limits<float>::max();
+	float y0 = std::numeric_limits<float>::max();
+	float z0 = std::numeric_limits<float>::max();
+	float x1 = std::numeric_limits<float>::min();
+	float y1 = std::numeric_limits<float>::min();
+	float z1 = std::numeric_limits<float>::min();
+	for (int i = 0; i < drawables.size(); ++i)
+	{
+		const auto& drawable = drawables[i];
+		const auto& boundingBox = drawable->BoundingBox();
+		for (int j = 0; j < boundingBox.size(); ++j)
+		{
+			glm::vec3 ptEyeSpace = viewMatrix * drawable->ModelMatrix() * glm::vec4(boundingBox[j], 1.f);
+			x0 = std::min(x0, ptEyeSpace.x);
+			y0 = std::min(y0, ptEyeSpace.y);
+			x1 = std::max(x1, ptEyeSpace.x);
+			y1 = std::max(y1, ptEyeSpace.y);
+			z0 = std::min(z0, ptEyeSpace.z);
+			z1 = std::max(z1, ptEyeSpace.z);
+		}
+	}
+
+	float cx = 0.5f * (x0 + x1);
+	float cy = 0.5f * (y0 + y1);
+	float cz = 0.5f * (z0 + z1);
+
+	float dx = m_Right - m_Left;
+	float dy = m_Top - m_Bottom;
+
+	// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
+	float zNear = -1.1f * z1;
+	float zFar = -1.1f * z0;
+
+	int windowWidth;
+	int windowHeight;
+	glfwGetWindowSize(m_Window, &windowWidth, &windowHeight);
+
+	UpdateProjectionMatrix((float)windowWidth / (float)windowHeight, cx, cy, dx, dy, zNear, zFar);
+}
+
+
 auto MC_OpenGL::ProjectionOrthographic::Pan(float cursorDx, float cursorDy) -> void
 {
 	float projDx = m_Right - m_Left;

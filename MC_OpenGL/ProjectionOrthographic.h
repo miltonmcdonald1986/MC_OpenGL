@@ -22,6 +22,7 @@ namespace MC_OpenGL
 	public:
 		ProjectionOrthographic();
 
+		auto AutoCenter(const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void;
 		auto Pan(float cursorDx, float cursorDy) -> void;
 		auto ProjectionMatrix () const -> glm::mat4;
 		auto Resize(float oldWidth, float oldHeight, float newWidth, float newHeight) -> void;

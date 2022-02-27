@@ -297,11 +297,11 @@ int main ()
 	MC_OpenGL::InitDrawables();
 
 
-	//for (int i = 0; i < 10; ++i)
-	//	{
-	//	pGS->drawables.push_back (new MC_OpenGL::Cube (glm::translate (glm::mat4 (1.f), MC_OpenGL::cubePositions[i])));
-	//	}
-	pGS->drawables.push_back(new MC_OpenGL::Triangles("C:\\cncm\\ncfiles\\LT1 090 No Plate.stl"));
+	for (int i = 0; i < 10; ++i)
+		{
+		pGS->drawables.push_back (new MC_OpenGL::Cube (glm::translate (glm::mat4 (1.f), MC_OpenGL::cubePositions[i])));
+		}
+	//pGS->drawables.push_back(new MC_OpenGL::Triangles("C:\\cncm\\ncfiles\\LT1 090 No Plate.stl"));
 	pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
 
 

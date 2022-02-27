@@ -23,37 +23,43 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
 {
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
 
+    auto FitZAndCenter = [&pGS]()
+    {
+        pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+        pGS->projection.AutoCenter(pGS->drawables, pGS->camera.ViewMatrix());
+    };
+
     if ((mods & GLFW_MOD_ALT) != 0)
     {
         if ((key == GLFW_KEY_B) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewBack();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+            FitZAndCenter();
         }
         if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewFront();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+            FitZAndCenter();
         }
         if ((key == GLFW_KEY_I) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewIsometric();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+            FitZAndCenter();
         }
         if ((key == GLFW_KEY_L) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewLeft();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+            FitZAndCenter();
         }
         if ((key == GLFW_KEY_R) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewRight();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+            FitZAndCenter();
         }
         if ((key == GLFW_KEY_T) && (action == GLFW_PRESS))
         {
             pGS->camera.SetViewTop();
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+            FitZAndCenter();
         }
     }
     else
