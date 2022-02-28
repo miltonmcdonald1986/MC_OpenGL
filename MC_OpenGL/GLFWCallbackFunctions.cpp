@@ -29,7 +29,15 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
         pGS->projection.AutoCenter(pGS->drawables, pGS->camera.ViewMatrix());
     };
 
-    if ((mods & GLFW_MOD_ALT) != 0)
+    if (((mods & GLFW_MOD_ALT) != 0) && ((mods & GLFW_MOD_SHIFT) != 0))
+        {
+        if ((key == GLFW_KEY_B) && (action == GLFW_PRESS))
+            {
+            pGS->camera.SetViewBottom ();
+            FitZAndCenter ();
+            }
+        }
+    else if ((mods & GLFW_MOD_ALT) != 0)
     {
         if ((key == GLFW_KEY_B) && (action == GLFW_PRESS))
         {

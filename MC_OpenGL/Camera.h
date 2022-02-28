@@ -22,6 +22,7 @@ namespace MC_OpenGL
 		auto UpdateViewMatrix()								-> void;
 		auto SetViewIsometric()								-> void;
 		auto SetViewBack()									-> void;
+		auto SetViewBottom ()								-> void;
 		auto SetViewFront()									-> void;
 		auto SetViewLeft()									-> void;
 		auto SetViewRight()									-> void;

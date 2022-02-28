@@ -1,12 +1,25 @@
 #include "Camera.h"
 
 
+namespace {
+
+
+const glm::vec3 axisX (1.f, 0.f, 0.f);
+const glm::vec3 axisY (0.f, 1.f, 0.f);
+const glm::vec3 axisZ (0.f, 0.f, 1.f);
+
+const glm::vec3 pointOrigin (0.f, 0.f, 0.f);
+
+
+}
+
+
 MC_OpenGL::Camera::Camera()
-	:	m_Eye	(glm::vec3(0.f, 0.f, 1.f)),
-		m_Center(glm::vec3(0.f, 0.f, 0.f)),
-		m_Up	(glm::vec3(0.f, 1.f, 0.f)),
-		m_Right	(glm::vec3(1.f, 0.f, 0.f)),
-		m_View	(glm::lookAt(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)))
+	:	m_Eye	(axisZ),
+		m_Center(pointOrigin),
+		m_Up	(axisY),
+		m_Right	(axisX),
+		m_View	(glm::lookAt(axisZ, pointOrigin, axisY))
 {
 }
 
@@ -37,51 +50,78 @@ auto MC_OpenGL::Camera::UpdateViewMatrix() -> void
 
 auto MC_OpenGL::Camera::SetViewIsometric() -> void
 {
-	// TODO
+	auto rootOneThird	= sqrtf(1.f/3.f);
+
+	static const glm::mat3 mat{ 
+		     sqrtf(2.f)/2.f,	     sqrtf(2.f)/2.f,	0.f,
+		-1.f/sqrtf(6.f),		 1.f/sqrtf(6.f),		2.f/sqrtf(6.f),
+		     sqrtf(1.f/3.f),	-1.f*sqrtf(1.f/3.f),	    sqrtf(1.f/3.f)
+		};
+
+	m_Right = mat*axisX;
+	m_Up	= mat*axisY;
+	m_Eye	= mat*axisZ;
+
+	UpdateViewMatrix ();
 }
 
 
 auto MC_OpenGL::Camera::SetViewBack() -> void
 {
-	m_Right = glm::vec3(-1.f, 0.f, 0.f);
-	m_Up = glm::vec3(0.f, 0.f, 1.f);
-	m_Eye = glm::vec3(0.f, 1.f, 0.f);
+	m_Right	= -1.f*axisX;
+	m_Up	= axisZ;
+	m_Eye	= axisY;
+
 	UpdateViewMatrix();
 }
 
 
+auto MC_OpenGL::Camera::SetViewBottom () -> void
+	{
+	m_Right	= -1.f*axisX;
+	m_Up	= axisY;
+	m_Eye	= -1.f*axisZ;
+
+	UpdateViewMatrix ();
+	}
+
+
 auto MC_OpenGL::Camera::SetViewFront() -> void
 {
-	m_Right = glm::vec3(1.f, 0.f, 0.f);
-	m_Up = glm::vec3(0.f, 0.f, 1.f);
-	m_Eye = glm::vec3(0.f, -1.f, 0.f);
+	m_Right	= axisX;
+	m_Up	= axisZ;
+	m_Eye	= -1.f*axisY;
+
 	UpdateViewMatrix();
 }
 
 
 auto MC_OpenGL::Camera::SetViewLeft() -> void
 {
-	m_Right = glm::vec3(0.f, -1.f, 0.f);
-	m_Up = glm::vec3(0.f, 0.f, 1.f);
-	m_Eye = glm::vec3(-1.f, 0.f, 0.f);
+	m_Right	= -1.f*axisY;
+	m_Up	= axisZ;
+	m_Eye	= -1.f*axisX;
+
 	UpdateViewMatrix();
 }
 
 
 auto MC_OpenGL::Camera::SetViewRight() -> void
 {
-	m_Right = glm::vec3(0.f, 1.f, 0.f);
-	m_Up = glm::vec3(0.f, 0.f, 1.f);
-	m_Eye = glm::vec3(1.f, 0.f, 0.f);
+	m_Right	= axisY;
+	m_Up	= axisZ;
+	m_Eye	= axisX;
+
 	UpdateViewMatrix();
 }
 
 
 auto MC_OpenGL::Camera::SetViewTop() -> void
 {
-	m_Right = glm::vec3(1.f, 0.f, 0.f);
-	m_Up = glm::vec3(0.f, 1.f, 0.f);
-	m_Eye = glm::vec3(0.f, 0.f, 1.f);
+	m_Right	= axisX;
+	m_Up	= axisY;
+	m_Eye	= axisZ;
+
 	UpdateViewMatrix();
 }
 
