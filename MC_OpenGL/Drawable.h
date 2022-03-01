@@ -18,16 +18,21 @@ namespace MC_OpenGL
 	class Drawable
 		{
 		public:
+			Drawable(GLuint shaderId);
+
 			virtual auto Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void = 0;
 			virtual auto BoundingBox () const -> std::array<glm::vec3, 8> = 0;
 			virtual auto ModelMatrix() const -> glm::mat4 = 0;
+
+		protected:
+			GLuint m_ShaderId = 0;
 		};
 
 
 	class Cube : public Drawable
 	{
 	public:
-		Cube(const glm::mat4& modelMatrix);
+		Cube(GLuint shaderId, const glm::mat4& modelMatrix);
 
 		virtual auto Draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) const -> void;
 
@@ -37,7 +42,6 @@ namespace MC_OpenGL
 	protected:
 		glm::mat4					m_ModelMatrix	= glm::mat4(1.f);
 		GLuint						m_Vao			= 0;
-		Shader						m_Shader		= Shader();
 		std::array<glm::vec3, 8>	m_BoundingBox	= std::array<glm::vec3, 8>();
 	};
 

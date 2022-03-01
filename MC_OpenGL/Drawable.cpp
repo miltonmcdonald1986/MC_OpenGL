@@ -155,7 +155,7 @@ auto MC_OpenGL::InitDrawables() -> void
 
 
 MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
-	: Cube(modelMatrix)
+	: Cube(Shader(R"(..\shaders\vsContainer.glsl)", R"(..\shaders\fsContainer.glsl)"), modelMatrix)
 	{
 	// START TEXTURE STUFF
 	int width, height, nrChannels;
@@ -204,19 +204,11 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 		}
 
 	stbi_image_free (data);
-
-	m_Shader = Shader (R"(..\shaders\vsContainer.glsl)", R"(..\shaders\fsContainer.glsl)");
-	if (!m_Shader)
-		{
-		const auto &[e, i] = m_Shader.GetInfo ();
-		std::cerr << i << '\n';
-		//return static_cast<int>(e);
-		}
 	}
 
 	auto MC_OpenGL::WoodenBox::Draw (const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix) const -> void
 		{
-		m_Shader.Use ();
+		glUseProgram(m_ShaderId);
 
 		glBindVertexArray (m_Vao);
 
@@ -226,20 +218,21 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 		glActiveTexture (GL_TEXTURE1);
 		glBindTexture (GL_TEXTURE_2D, MC_OpenGL::texture1);
 
-		glUniform1i (glGetUniformLocation (m_Shader.GetProgramId (), "samplerContainer"), 0);
-		glUniform1i (glGetUniformLocation (m_Shader.GetProgramId (), "samplerAwesomeFace"), 1);
+		glUniform1i (glGetUniformLocation (m_ShaderId, "samplerContainer"), 0);
+		glUniform1i (glGetUniformLocation (m_ShaderId, "samplerAwesomeFace"), 1);
 
-		glUniform1f (glGetUniformLocation (m_Shader.GetProgramId (), "mixPercentage"), 0.f);
+		glUniform1f (glGetUniformLocation (m_ShaderId, "mixPercentage"), 0.f);
 
-		glUniformMatrix4fv (glGetUniformLocation (m_Shader.GetProgramId (), "model"), 1, GL_FALSE, glm::value_ptr (m_ModelMatrix));
-		glUniformMatrix4fv (glGetUniformLocation (m_Shader.GetProgramId (), "view"), 1, GL_FALSE, glm::value_ptr (viewMatrix));
-		glUniformMatrix4fv (glGetUniformLocation (m_Shader.GetProgramId (), "projection"), 1, GL_FALSE, glm::value_ptr (projectionMatrix));
+		glUniformMatrix4fv (glGetUniformLocation (m_ShaderId, "model"), 1, GL_FALSE, glm::value_ptr (m_ModelMatrix));
+		glUniformMatrix4fv (glGetUniformLocation (m_ShaderId, "view"), 1, GL_FALSE, glm::value_ptr (viewMatrix));
+		glUniformMatrix4fv (glGetUniformLocation (m_ShaderId, "projection"), 1, GL_FALSE, glm::value_ptr (projectionMatrix));
 
 		glDrawArrays (GL_TRIANGLES, 0, 36);
 		}
 
 
-	MC_OpenGL::Cube::Cube(const glm::mat4& modelMatrix)
+	MC_OpenGL::Cube::Cube(GLuint shaderId, const glm::mat4& modelMatrix)
+		: Drawable(shaderId)
 	{
 		m_ModelMatrix = modelMatrix;
 
@@ -312,26 +305,18 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 				glm::vec3(0.5f, 0.5f, -0.5f),
 				glm::vec3(0.5f, 0.5f, 0.5f)
 		};
-
-		m_Shader = Shader(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicCoordinateSystems.glsl)");
-		if (!m_Shader)
-		{
-			const auto& [e, i] = m_Shader.GetInfo();
-			std::cerr << i << '\n';
-			//return static_cast<int>(e);
-		}
 	}
 
 
 	auto MC_OpenGL::Cube::Draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) const -> void
 	{
-		m_Shader.Use();
+		glUseProgram(m_ShaderId);
 
 		glBindVertexArray(m_Vao);
 
-		glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "model"), 1, GL_FALSE, glm::value_ptr(m_ModelMatrix));
-		glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "view"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-		glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "projection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+		glUniformMatrix4fv(glGetUniformLocation(m_ShaderId, "model"), 1, GL_FALSE, glm::value_ptr(m_ModelMatrix));
+		glUniformMatrix4fv(glGetUniformLocation(m_ShaderId, "view"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
+		glUniformMatrix4fv(glGetUniformLocation(m_ShaderId, "projection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
@@ -346,3 +331,9 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 		{
 		return m_ModelMatrix;
 		}
+
+
+	MC_OpenGL::Drawable::Drawable(GLuint shaderId)
+		: m_ShaderId(shaderId)
+	{
+	}

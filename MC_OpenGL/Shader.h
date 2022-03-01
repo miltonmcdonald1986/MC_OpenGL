@@ -117,6 +117,11 @@ class Shader
 			glUniform1f (glGetUniformLocation (m_Id, name.c_str ()), value);
 			}
 
+		auto SetVec3(const std::string& name, const glm::vec3& value) const -> void
+		{
+			glUniform3fv(glGetUniformLocation(m_Id, name.c_str()), 1, &value[0]);
+		}
+
 	private:
 		GLuint      m_Id = 0;
 		ErrorCode	m_ErrorCode = ErrorCode::NO_ERROR;
