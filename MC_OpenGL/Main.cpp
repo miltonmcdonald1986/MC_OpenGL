@@ -302,15 +302,12 @@ int main()
 	MC_OpenGL::Shader shaderSolidColor(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicLightColor.glsl)");
 	glUseProgram(shaderSolidColor.GetProgramId());
 	shaderSolidColor.SetVec3("lightColor", glm::vec3(1.f, 1.f, 1.f));
-	shaderSolidColor.SetVec3("objectColor", glm::vec3(0.f, 0.f, 0.5f));
-	shaderSolidColor.SetVec3("lightPos", MC_OpenGL::cubePositions[1]);
+	shaderSolidColor.SetVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
 
-	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[2])));
-	for (int i = 0; i < 10; ++i)
+	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
+	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
+	for (int i = 1; i < 10; ++i)
 	{
-		if (i == 2)
-			continue;
-
 		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
 	}
 	//pGS->drawables.push_back(new MC_OpenGL::Triangles("C:\\Temp\\finalStl.stl"));
@@ -324,9 +321,24 @@ int main()
 	MC_OpenGL::DemoTriangle demoTriangle;
 	//MC_OpenGL::Triangles triangles("C:\\cncm\\ncfiles\\LT1 090 No Plate.stl");
 
+	glm::vec3 centroid(0.f, 0.f, 0.f);
+	for (int i = 1; i < 10; ++i)
+	{
+		centroid += MC_OpenGL::cubePositions[i];
+	}
+	centroid /= 9.f;
+
 	// Game loop
 	while (!glfwWindowShouldClose(window))
 	{
+		auto lightPos = glm::vec3(centroid.x + 6.f * cosf((float)glfwGetTime()), 0.f, centroid.z + 6.f * sinf((float)glfwGetTime()));
+		glm::mat4 lightModel(1.f);
+		lightModel = glm::translate(lightModel, lightPos);
+		pGS->drawables[0]->SetModel(lightModel);
+		pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+
+		shaderSolidColor.SetVec3("lightPos", lightPos);
+
 		glViewport(0, 0, pGS->windowWidth, pGS->windowHeight);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

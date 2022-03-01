@@ -340,3 +340,9 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 		: m_ShaderId(shaderId)
 	{
 	}
+
+
+	auto MC_OpenGL::Drawable::SetModel(const glm::mat4& model) -> void
+	{
+		m_ModelMatrix = model;
+	}
