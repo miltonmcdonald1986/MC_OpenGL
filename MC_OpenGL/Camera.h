@@ -29,7 +29,7 @@ namespace MC_OpenGL
 		auto SetViewTop()									-> void;
 		auto ViewMatrix() const								-> glm::mat4;
 
-	private:
+	//private:
 		glm::vec3 m_Eye;
 		glm::vec3 m_Center;
 		glm::vec3 m_Right;

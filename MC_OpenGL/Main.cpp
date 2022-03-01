@@ -303,10 +303,14 @@ int main()
 	glUseProgram(shaderSolidColor.GetProgramId());
 	shaderSolidColor.SetVec3("lightColor", glm::vec3(1.f, 1.f, 1.f));
 	shaderSolidColor.SetVec3("objectColor", glm::vec3(0.f, 0.f, 0.5f));
+	shaderSolidColor.SetVec3("lightPos", MC_OpenGL::cubePositions[1]);
 
-	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
-	for (int i = 1; i < 10; ++i)
+	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[2])));
+	for (int i = 0; i < 10; ++i)
 	{
+		if (i == 2)
+			continue;
+
 		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
 	}
 	//pGS->drawables.push_back(new MC_OpenGL::Triangles("C:\\Temp\\finalStl.stl"));
