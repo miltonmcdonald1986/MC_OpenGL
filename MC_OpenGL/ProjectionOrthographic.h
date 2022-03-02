@@ -30,7 +30,7 @@ namespace MC_OpenGL
 		auto ZoomFit(const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly = false) -> void;
 		auto ZoomInOutToCursor(float offset) -> void;
 
-	private:
+	//private:
 		auto UpdateProjectionMatrix(float zNear, float zFar) -> void;
 		auto UpdateProjectionMatrix(float aspectRatio, float cx, float cy, float dx, float dy, float zNear, float zFar) -> void;
 		auto ZoomInOut(float offset) -> void;

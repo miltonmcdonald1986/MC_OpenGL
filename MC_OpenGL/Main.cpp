@@ -126,7 +126,7 @@ namespace MC_OpenGL {
 		Triangles(const Shader& shader, const std::string& stl)
 			: Drawable(shader)
 		{
-			m_Shader = Shader(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicCoordinateSystems.glsl)");
+			m_Shader = shader;//Shader(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicCoordinateSystems.glsl)");
 			m_ModelMatrix = glm::mat4(1.f);
 
 			std::vector<float> vertices;
@@ -138,6 +138,11 @@ namespace MC_OpenGL {
 				std::stringstream ss(line);
 				std::string firstWord;
 				ss >> firstWord;
+				std::array<float, 3> normal;
+				if (firstWord == "facet")
+				{
+					ss >> firstWord >> normal[0] >> normal[1] >> normal[2];
+				}
 				if (firstWord == "vertex")
 				{
 					float x;
@@ -148,9 +153,14 @@ namespace MC_OpenGL {
 					vertices.push_back(x);
 					vertices.push_back(y);
 					vertices.push_back(z);
+					vertices.push_back(0.f);
+					vertices.push_back(0.f);
+					vertices.push_back(normal[0]);
+					vertices.push_back(normal[1]);
+					vertices.push_back(normal[2]);
 				}
 			}
-			m_NumVertices = vertices.size();
+			m_NumVertices = vertices.size()/8.f;
 
 			float x0 = std::numeric_limits<float>::max();
 			float y0 = std::numeric_limits<float>::max();
@@ -158,7 +168,7 @@ namespace MC_OpenGL {
 			float x1 = std::numeric_limits<float>::min();
 			float y1 = std::numeric_limits<float>::min();
 			float z1 = std::numeric_limits<float>::min();
-			for (int i = 0; i < vertices.size(); i += 3)
+			for (int i = 0; i < vertices.size(); i += 8)
 			{
 				x0 = std::min(x0, vertices[i]);
 				y0 = std::min(y0, vertices[i + 1]);
@@ -185,8 +195,14 @@ namespace MC_OpenGL {
 			glBindBuffer(GL_ARRAY_BUFFER, m_Vbo);
 			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(0);
+
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+			glEnableVertexAttribArray(1);
+
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+			glEnableVertexAttribArray(2);
 		}
 
 		auto Draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) const -> void
@@ -302,15 +318,15 @@ int main()
 	MC_OpenGL::Shader shaderSolidColor(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicLightColor.glsl)");
 	glUseProgram(shaderSolidColor.GetProgramId());
 	shaderSolidColor.SetVec3("lightColor", glm::vec3(1.f, 1.f, 1.f));
-	shaderSolidColor.SetVec3("objectColor", glm::vec3(0.5f, 0.5f, 0.5f));
+	shaderSolidColor.SetVec3("objectColor", glm::vec3(0.5f, 0.5f, 1.f));
 
-	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
+	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
-	for (int i = 1; i < 10; ++i)
-	{
-		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
-	}
-	//pGS->drawables.push_back(new MC_OpenGL::Triangles("C:\\Temp\\finalStl.stl"));
+	//for (int i = 1; i < 10; ++i)
+	//{
+	//	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
+	//}
+	pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
 	pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
 
 
@@ -331,13 +347,14 @@ int main()
 	// Game loop
 	while (!glfwWindowShouldClose(window))
 	{
-		auto lightPos = glm::vec3(centroid.x + 6.f * cosf((float)glfwGetTime()), 0.f, centroid.z + 6.f * sinf((float)glfwGetTime()));
-		glm::mat4 lightModel(1.f);
-		lightModel = glm::translate(lightModel, lightPos);
-		pGS->drawables[0]->SetModel(lightModel);
-		pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+		//auto lightPos = glm::vec3(centroid.x + 6.f * cosf((float)glfwGetTime()), centroid.y + 6.f * sinf((float)glfwGetTime()), -2.f);
+		//glm::mat4 lightModel(1.f);
+		//lightModel = glm::translate(lightModel, lightPos);
+		//pGS->drawables[0]->SetModel(lightModel);
+		//pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
 
-		shaderSolidColor.SetVec3("lightPos", lightPos);
+		//shaderSolidColor.SetVec3("lightPos", lightPos);
+		shaderSolidColor.SetVec3("viewPos", glm::vec3(0.5f*(pGS->projection.m_Right + pGS->projection.m_Left), 0.5f * (pGS->projection.m_Top + pGS->projection.m_Bottom), 11.f/*abs(pGS->projection.m_Near)*/));
 
 		glViewport(0, 0, pGS->windowWidth, pGS->windowHeight);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
