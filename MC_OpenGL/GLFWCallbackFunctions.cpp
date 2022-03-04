@@ -124,6 +124,26 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
     {
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
 
+    int wx;
+    int wy;
+    glfwGetWindowSize(window, &wx, &wy);
+
+    float x = pGS->projection.m_Left + (xPos / (float)wx) * (pGS->projection.m_Right - pGS->projection.m_Left);
+    float y = pGS->projection.m_Bottom+ (yPos / (float)wy) * (pGS->projection.m_Top- pGS->projection.m_Bottom);
+    y *= -1.f;
+
+    std::cout << x << ' ' << y << "\n\n";
+
+    for (int i = 0; i < pGS->drawables[0]->BoundingBox().size(); ++i)
+    {
+        glm::vec3 pi = /*pGS->projection.ProjectionMatrix() **/ pGS->camera.ViewMatrix()*pGS->drawables[0]->ModelMatrix()*glm::vec4(pGS->drawables[0]->BoundingBox()[i], 1.f);
+        std::cout << pi[0] << ' ' << pi[1] << ' ' << pi[2] << '\n';
+    }
+    std::cout << '\n';
+
+    glm::vec3 projectedPosition = pGS->projection.ProjectionMatrix()*glm::vec4(pGS->drawables[0]->BoundingBox()[0], 1.f);
+    //std::cout << projectedPosition.x << ' ' << projectedPosition.y << ' ' << projectedPosition.z << '\n';
+
     pGS->cursorPosXPrev = pGS->cursorPosX;
     pGS->cursorPosYPrev = pGS->cursorPosY;
 
