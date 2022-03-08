@@ -1,6 +1,7 @@
 #include "ProjectionOrthographic.h"
 
 #include "Drawable.h"
+#include "GlobalState.h"
 
 
 MC_OpenGL::ProjectionOrthographic::ProjectionOrthographic()
@@ -8,14 +9,14 @@ MC_OpenGL::ProjectionOrthographic::ProjectionOrthographic()
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void
+auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const MC_OpenGL::GlobalState* pGS, const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void
 {
 	float x0 = std::numeric_limits<float>::max();
 	float y0 = std::numeric_limits<float>::max();
 	float z0 = std::numeric_limits<float>::max();
-	float x1 = std::numeric_limits<float>::min();
-	float y1 = std::numeric_limits<float>::min();
-	float z1 = std::numeric_limits<float>::min();
+	float x1 = std::numeric_limits<float>::lowest();
+	float y1 = std::numeric_limits<float>::lowest();
+	float z1 = std::numeric_limits<float>::lowest();
 	for (int i = 0; i < drawables.size(); ++i)
 	{
 		const auto& drawable = drawables[i];
@@ -40,8 +41,8 @@ auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const std::vector<Drawable*>&
 	float dy = m_Top - m_Bottom;
 
 	// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
-	float zNear = -1.1f * z1;
-	float zFar = -1.1f * z0;
+	float zNear = (pGS->camera.ViewMatrix() * glm::vec4(pGS->camera.m_Eye, 1.f)).z - z1 - 1.f;
+	float zFar = (pGS->camera.ViewMatrix() * glm::vec4(pGS->camera.m_Eye, 1.f)).z - z0 + 1.f;
 
 	int windowWidth;
 	int windowHeight;
@@ -129,14 +130,14 @@ auto MC_OpenGL::ProjectionOrthographic::UpdateProjectionMatrix(float aspectRatio
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly) -> void
+auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const MC_OpenGL::GlobalState* pGS, const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly) -> void
 {
 	float x0 = std::numeric_limits<float>::max();
 	float y0 = std::numeric_limits<float>::max();
 	float z0 = std::numeric_limits<float>::max();
-	float x1 = std::numeric_limits<float>::min();
-	float y1 = std::numeric_limits<float>::min();
-	float z1 = std::numeric_limits<float>::min();
+	float x1 = std::numeric_limits<float>::lowest();
+	float y1 = std::numeric_limits<float>::lowest();
+	float z1 = std::numeric_limits<float>::lowest();
 	for (int i = 0; i < drawables.size(); ++i)
 	{
 		const auto &drawable = drawables[i];
@@ -166,8 +167,8 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const std::vector<Drawable *> &d
 	dy *= 1.1f;
 
 	// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
-	float zNear = -1.1f * z1;
-	float zFar = -1.1f * z0;
+	float zNear = (pGS->camera.ViewMatrix()*glm::vec4(pGS->camera.m_Eye, 1.f)).z - z1 - 1.f;
+	float zFar = (pGS->camera.ViewMatrix()*glm::vec4(pGS->camera.m_Eye, 1.f)).z - z0 + 1.f;
 
 	int windowWidth;
 	int windowHeight;

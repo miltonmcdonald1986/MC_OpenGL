@@ -165,9 +165,9 @@ namespace MC_OpenGL {
 			float x0 = std::numeric_limits<float>::max();
 			float y0 = std::numeric_limits<float>::max();
 			float z0 = std::numeric_limits<float>::max();
-			float x1 = std::numeric_limits<float>::min();
-			float y1 = std::numeric_limits<float>::min();
-			float z1 = std::numeric_limits<float>::min();
+			float x1 = std::numeric_limits<float>::lowest();
+			float y1 = std::numeric_limits<float>::lowest();
+			float z1 = std::numeric_limits<float>::lowest();
 			for (int i = 0; i < vertices.size(); i += 8)
 			{
 				x0 = std::min(x0, vertices[i]);
@@ -322,13 +322,13 @@ int main()
 
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
-	//for (int i = 1; i < 10; ++i)
-	//{
-	//	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
-	//}
+	for (int i = 0; i < 10; ++i)
+	{
+		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
+	}
 	//pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
-	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
-	pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
+	pGS->projection.ZoomFit(pGS.get(), pGS->drawables, pGS->camera.ViewMatrix());
 
 
 	// END TEXTURE STUFF
@@ -362,7 +362,13 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		for (const MC_OpenGL::Drawable* drawable : pGS->drawables)
+		{
+			if (drawable->GetHover())
+				shaderSolidColor.SetVec3("objectColor", glm::vec3(1.f, 1.f, 0.f));
+			else
+				shaderSolidColor.SetVec3("objectColor", glm::vec3(0.5f, 0.5f, 1.f));
 			drawable->Draw(pGS->camera.ViewMatrix(), pGS->projection.ProjectionMatrix());
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

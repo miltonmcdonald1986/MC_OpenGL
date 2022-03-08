@@ -1,9 +1,15 @@
 #include "GLFWCallbackFunctions.h"
 
 #include <algorithm>
+#include <format>
 #include <iostream>
 
 #include <glm.hpp>
+
+#include <Mathematics/ContAlignedBox.h>
+#include <Mathematics/IntrLine3AlignedBox3.h>
+#include <Mathematics/Line.h>
+#include <Mathematics/Vector3.h>
 
 #include "GlobalState.h"
 #include "ProjectionOrthographic.h"
@@ -25,8 +31,8 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
 
     auto FitZAndCenter = [&pGS]()
     {
-        pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
-        pGS->projection.AutoCenter(pGS->drawables, pGS->camera.ViewMatrix());
+        pGS->projection.ZoomFit(pGS, pGS->drawables, pGS->camera.ViewMatrix(), true);
+        pGS->projection.AutoCenter(pGS, pGS->drawables, pGS->camera.ViewMatrix());
     };
 
     if (((mods & GLFW_MOD_ALT) != 0) && ((mods & GLFW_MOD_SHIFT) != 0))
@@ -103,7 +109,7 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
         }
         if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
         {
-            pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix());
+            pGS->projection.ZoomFit(pGS, pGS->drawables, pGS->camera.ViewMatrix());
         }
     }
 }
@@ -120,29 +126,73 @@ auto MC_OpenGL::GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> voi
     globalState->cursorPosYPrev = yPos;
     }
 
+auto ToGteVector3(const glm::vec3& glmVector)
+{
+    return gte::Vector3<float>({ glmVector.x, glmVector.y, glmVector.z });
+}
+
 auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double yPos) -> void
     {
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
 
-    int wx;
-    int wy;
+
+
+    int wx, wy;
     glfwGetWindowSize(window, &wx, &wy);
 
-    float x = pGS->projection.m_Left + (xPos / (float)wx) * (pGS->projection.m_Right - pGS->projection.m_Left);
-    float y = pGS->projection.m_Bottom+ (yPos / (float)wy) * (pGS->projection.m_Top- pGS->projection.m_Bottom);
-    y *= -1.f;
+    ////float zf;
+    ////glReadPixels(xPos, yPos, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &zf);
 
-    std::cout << x << ' ' << y << "\n\n";
+    glm::vec3 ndc = glm::vec3(xPos / wx, 1.f - yPos / wy, pGS->projection.m_Near) * 2.f - 1.f;
+    auto viewSpace = glm::inverse(pGS->projection.ProjectionMatrix()) * glm::vec4(ndc, 1.f);
+    auto worldSpaceNear = glm::inverse(pGS->camera.ViewMatrix()) * glm::vec4(viewSpace);
 
-    for (int i = 0; i < pGS->drawables[0]->BoundingBox().size(); ++i)
+    glfwSetWindowTitle(window, std::format("X{} Y{} Z{}", worldSpaceNear.x, worldSpaceNear.y, worldSpaceNear.z).c_str());
+
+    ndc = glm::vec3(xPos / wx, 1.f - yPos / wy, pGS->projection.m_Far) * 2.f - 1.f;
+    viewSpace = glm::inverse(pGS->projection.ProjectionMatrix()) * glm::vec4(ndc, 1.f);
+    auto worldSpaceFar = glm::inverse(pGS->camera.ViewMatrix()) * glm::vec4(viewSpace);
+
+
+    for (int i = 0; i < pGS->drawables.size(); ++i)
     {
-        glm::vec3 pi = /*pGS->projection.ProjectionMatrix() **/ pGS->camera.ViewMatrix()*pGS->drawables[0]->ModelMatrix()*glm::vec4(pGS->drawables[0]->BoundingBox()[i], 1.f);
-        std::cout << pi[0] << ' ' << pi[1] << ' ' << pi[2] << '\n';
-    }
-    std::cout << '\n';
+        float x0 = std::numeric_limits<float>::max();
+        float y0 = std::numeric_limits<float>::max();
+        float z0 = std::numeric_limits<float>::max();
+        float x1 = std::numeric_limits<float>::lowest();
+        float y1 = std::numeric_limits<float>::lowest();
+        float z1 = std::numeric_limits<float>::lowest();
+        const auto& drawable = pGS->drawables[i];
+        const auto& boundingBox = drawable->BoundingBox();
+        for (int j = 0; j < boundingBox.size(); ++j)
+        {
+            glm::vec3 ptWorldSpace = drawable->ModelMatrix() * glm::vec4(boundingBox[j], 1.f);
+            x0 = std::min(x0, ptWorldSpace.x);
+            y0 = std::min(y0, ptWorldSpace.y);
+            x1 = std::max(x1, ptWorldSpace.x);
+            y1 = std::max(y1, ptWorldSpace.y);
+            z0 = std::min(z0, ptWorldSpace.z);
+            z1 = std::max(z1, ptWorldSpace.z);
+        }
 
-    glm::vec3 projectedPosition = pGS->projection.ProjectionMatrix()*glm::vec4(pGS->drawables[0]->BoundingBox()[0], 1.f);
-    //std::cout << projectedPosition.x << ' ' << projectedPosition.y << ' ' << projectedPosition.z << '\n';
+        gte::Vector3<float> bboxMin({ x0, y0, z0 });
+        gte::Vector3<float> bboxMax({ x1, y1, z1 });
+
+        gte::Line3<float> line(ToGteVector3(worldSpaceNear), ToGteVector3(glm::normalize(worldSpaceFar - worldSpaceNear)));
+        gte::AlignedBox3<float> box(bboxMin, bboxMax);
+
+        gte::TIQuery<float, gte::Line3<float>, gte::AlignedBox3<float> > tiq;
+        if (tiq(line, box).intersect)
+            pGS->drawables[i]->SetHover(true);
+        else
+            pGS->drawables[i]->SetHover(false);
+    }
+
+    //auto finalMatrix = glm::inverse(pGS->projection.ProjectionMatrix() * pGS->camera.ViewMatrix());
+    //auto wPos = finalMatrix * glm::vec4(ndc, 1.f);
+    //auto wPos3 = glm::vec3(wPos)/wPos.w;
+
+    //auto worldSpace = glm::unProject(glm::vec3(xPos, wy - yPos - 1.f, zf), glm::inverse(pGS->camera.ViewMatrix()), pGS->projection.ProjectionMatrix(), glm::vec4(0.f, 0.f, wx, wx));
 
     pGS->cursorPosXPrev = pGS->cursorPosX;
     pGS->cursorPosYPrev = pGS->cursorPosY;
@@ -169,7 +219,7 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
         float angleY = cursorDy * 2.f * glm::pi<float>() / pGS->windowHeight;
 
         pGS->camera.DoArcballRotation(angleX, angleY);
-        pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+        pGS->projection.ZoomFit(pGS, pGS->drawables, pGS->camera.ViewMatrix(), true);
 	}
 }
 

@@ -24,9 +24,12 @@ namespace MC_OpenGL
 			virtual auto BoundingBox () const -> std::array<glm::vec3, 8> = 0;
 			virtual auto ModelMatrix() const -> glm::mat4 = 0;
 
+			auto GetHover() const -> bool;
+			auto SetHover(bool hover) -> void;
 			auto SetModel(const glm::mat4 &model) -> void;
 
 		protected:
+			bool m_Hover = false;
 			glm::mat4 m_ModelMatrix = glm::mat4(1.f);
 			GLuint m_ShaderId = 0;
 		};

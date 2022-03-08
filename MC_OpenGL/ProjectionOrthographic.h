@@ -17,17 +17,20 @@ namespace MC_OpenGL
 {
 
 
+	struct GlobalState;
+
+
 	class ProjectionOrthographic
 	{
 	public:
 		ProjectionOrthographic();
 
-		auto AutoCenter(const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void;
+		auto AutoCenter(const MC_OpenGL::GlobalState* pGS, const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void;
 		auto Pan(float cursorDx, float cursorDy) -> void;
 		auto ProjectionMatrix () const -> glm::mat4;
 		auto Resize(float oldWidth, float oldHeight, float newWidth, float newHeight) -> void;
 		auto SetWindow (GLFWwindow *window) -> void;
-		auto ZoomFit(const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly = false) -> void;
+		auto ZoomFit(const MC_OpenGL::GlobalState *pGS, const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly = false) -> void;
 		auto ZoomInOutToCursor(float offset) -> void;
 
 	//private:

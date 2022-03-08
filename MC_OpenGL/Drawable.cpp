@@ -342,6 +342,18 @@ MC_OpenGL::WoodenBox::WoodenBox (const glm::mat4 &modelMatrix)
 	}
 
 
+	auto MC_OpenGL::Drawable::GetHover() const -> bool
+	{
+		return m_Hover;
+	}
+
+
+	auto MC_OpenGL::Drawable::SetHover(bool hover) -> void
+	{
+		m_Hover = hover;
+	}
+
+
 	auto MC_OpenGL::Drawable::SetModel(const glm::mat4& model) -> void
 	{
 		m_ModelMatrix = model;
