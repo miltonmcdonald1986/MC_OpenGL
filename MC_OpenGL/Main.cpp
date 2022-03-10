@@ -120,132 +120,6 @@ namespace MC_OpenGL {
 	//	};
 
 
-	class Triangles : public Drawable
-	{
-	public:
-		Triangles(const Shader& shader, const std::string& stl)
-			: Drawable(shader)
-		{
-			m_Shader = shader;//Shader(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicCoordinateSystems.glsl)");
-			m_ModelMatrix = glm::mat4(1.f);
-
-			std::vector<float> vertices;
-
-			std::ifstream ifs(stl);
-			std::string line;
-			while (std::getline(ifs, line))
-			{
-				std::stringstream ss(line);
-				std::string firstWord;
-				ss >> firstWord;
-				std::array<float, 3> normal;
-				if (firstWord == "facet")
-				{
-					ss >> firstWord >> normal[0] >> normal[1] >> normal[2];
-				}
-				if (firstWord == "vertex")
-				{
-					float x;
-					float y;
-					float z;
-					ss >> x >> y >> z;
-
-					vertices.push_back(x);
-					vertices.push_back(y);
-					vertices.push_back(z);
-					vertices.push_back(0.f);
-					vertices.push_back(0.f);
-					vertices.push_back(normal[0]);
-					vertices.push_back(normal[1]);
-					vertices.push_back(normal[2]);
-				}
-			}
-			m_NumVertices = vertices.size()/8.f;
-
-			float x0 = std::numeric_limits<float>::max();
-			float y0 = std::numeric_limits<float>::max();
-			float z0 = std::numeric_limits<float>::max();
-			float x1 = std::numeric_limits<float>::lowest();
-			float y1 = std::numeric_limits<float>::lowest();
-			float z1 = std::numeric_limits<float>::lowest();
-			for (int i = 0; i < vertices.size(); i += 8)
-			{
-				x0 = std::min(x0, vertices[i]);
-				y0 = std::min(y0, vertices[i + 1]);
-				x1 = std::max(x1, vertices[i]);
-				y1 = std::max(y1, vertices[i + 1]);
-				z0 = std::min(z0, vertices[i + 2]);
-				z1 = std::max(z1, vertices[i + 2]);
-			}
-			m_BoundingBox = std::array<glm::vec3, 8>{
-				glm::vec3(x0, y0, z0),
-					glm::vec3(x0, y0, z1),
-					glm::vec3(x0, y1, z0),
-					glm::vec3(x0, y1, z1),
-					glm::vec3(x1, y0, z0),
-					glm::vec3(x1, y0, z1),
-					glm::vec3(x1, y1, z0),
-					glm::vec3(x1, y1, z1)
-			};
-
-			glGenVertexArrays(1, &m_Vao);
-			glBindVertexArray(m_Vao);
-
-			glGenBuffers(1, &m_Vbo);
-			glBindBuffer(GL_ARRAY_BUFFER, m_Vbo);
-			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-			glEnableVertexAttribArray(0);
-
-			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-			glEnableVertexAttribArray(1);
-
-			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-			glEnableVertexAttribArray(2);
-		}
-
-		auto Draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) const -> void
-		{
-			//GLsizei numVertices = (GLsizei)m_Vertices.size();
-
-			m_Shader.Use();
-
-			glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "model"), 1, GL_FALSE, glm::value_ptr(m_ModelMatrix));
-			glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "view"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-			glUniformMatrix4fv(glGetUniformLocation(m_Shader.GetProgramId(), "projection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-
-			glBindVertexArray(m_Vao);
-			if (m_Indices.empty())
-				glDrawArrays(GL_TRIANGLES, 0, m_NumVertices);
-			else
-				glDrawElements(GL_TRIANGLES, m_NumVertices, GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-		}
-
-		auto BoundingBox() const->std::array<glm::vec3, 8>
-		{
-			return m_BoundingBox;
-		}
-
-		auto ModelMatrix() const -> glm::mat4
-		{
-			return m_ModelMatrix;
-		}
-
-	private:
-		glm::mat4					m_ModelMatrix;
-		Shader						m_Shader;
-		std::array<glm::vec3, 8>	m_BoundingBox;
-		std::vector<int>			m_Indices;
-		std::vector<float>			m_Vertices;
-		GLuint m_NumVertices;
-		GLuint m_Vao = 0;
-		GLuint m_Vbo = 0;
-		GLuint m_Ebo = 0;
-	};
-
-
 }
 
 /// <summary> Create a Window to display graphics on. </summary>
@@ -284,6 +158,7 @@ auto GLFWInit(GLFWwindow*& window, MC_OpenGL::GlobalState* pGS) -> MC_OpenGL::Er
 	glfwSetCursorEnterCallback(window, MC_OpenGL::GlfwCallbackCursorEnter);
 	glfwSetScrollCallback(window, MC_OpenGL::GlfwCallbackScroll);
 	glfwSetCursorPosCallback(window, MC_OpenGL::GlfwCallbackCursorPos);
+	glfwSetMouseButtonCallback(window, MC_OpenGL::GlfwCallbackMouseButton);
 	glfwSetWindowUserPointer(window, reinterpret_cast<void*>(pGS));
 
 	return MC_OpenGL::ErrorCode::NO_ERROR;
@@ -322,11 +197,12 @@ int main()
 
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
-	for (int i = 0; i < 10; ++i)
-	{
-		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
-	}
-	//pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
+	//for (int i = 0; i < 10; ++i)
+	//{
+	//	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
+	//	pGS->drawables.back()->SetColor(glm::vec3(0.5f, 0.5f, 1.f));
+	//}
+	pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
 	pGS->projection.ZoomFit(pGS.get(), pGS->drawables, pGS->camera.ViewMatrix());
 
@@ -355,7 +231,7 @@ int main()
 		//pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
 
 		//shaderSolidColor.SetVec3("lightPos", lightPos);
-		shaderSolidColor.SetVec3("viewPos", glm::vec3(0.5f*(pGS->projection.m_Right + pGS->projection.m_Left), 0.5f * (pGS->projection.m_Top + pGS->projection.m_Bottom), 11.f/*abs(pGS->projection.m_Near)*/));
+		shaderSolidColor.SetVec3("viewPos", glm::vec3(0.5f*(pGS->projection.m_Right + pGS->projection.m_Left), 0.5f * (pGS->projection.m_Top + pGS->projection.m_Bottom), 22.f/*abs(pGS->projection.m_Near)*/));
 
 		glViewport(0, 0, pGS->windowWidth, pGS->windowHeight);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -363,10 +239,10 @@ int main()
 
 		for (const MC_OpenGL::Drawable* drawable : pGS->drawables)
 		{
-			if (drawable->GetHover())
+			if (drawable->GetHover() || drawable->GetSelected())
 				shaderSolidColor.SetVec3("objectColor", glm::vec3(1.f, 1.f, 0.f));
 			else
-				shaderSolidColor.SetVec3("objectColor", glm::vec3(0.5f, 0.5f, 1.f));
+				shaderSolidColor.SetVec3("objectColor", drawable->GetColor());
 			drawable->Draw(pGS->camera.ViewMatrix(), pGS->projection.ProjectionMatrix());
 		}
 

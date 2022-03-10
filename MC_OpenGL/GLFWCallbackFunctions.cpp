@@ -8,6 +8,7 @@
 
 #include <Mathematics/ContAlignedBox.h>
 #include <Mathematics/IntrLine3AlignedBox3.h>
+#include <Mathematics/IntrLine3Triangle3.h>
 #include <Mathematics/Line.h>
 #include <Mathematics/Vector3.h>
 
@@ -15,8 +16,24 @@
 #include "ProjectionOrthographic.h"
 
 
+namespace
+{
+
+
+    auto WindowIsMinimized(int width, int height) -> bool
+    {
+        return ((width == 0) && (height == 0));
+    }
+
+
+}
+
+
 auto MC_OpenGL::GLFWCallbackFramebufferSize (GLFWwindow *window, int width, int height) -> void
 	{
+    if (WindowIsMinimized(width, height))
+        return;
+
 	glViewport (0, 0, width, height);
 
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
@@ -79,7 +96,12 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
     else
     {
         if ((key == GLFW_KEY_ESCAPE) && (action == GLFW_PRESS))
-            glfwSetWindowShouldClose(window, true);
+        {
+            for (auto& drawable : pGS->drawables)
+            {
+                drawable->SetSelected(false);
+            }
+        }
         if ((key == GLFW_KEY_F2) && (action == GLFW_PRESS || action == GLFW_REPEAT))
         {
             switch (pGS->polygonMode)
@@ -106,6 +128,33 @@ auto MC_OpenGL::GlfwCallbackKey(GLFWwindow* window, int key, int scancode, int a
             pGS->mixPercentage = std::max(pGS->mixPercentage, 0.f);
 
             std::cout << pGS->mixPercentage << '\n';
+        }
+        if ((key == GLFW_KEY_C) && (action == GLFW_PRESS))
+        {
+            std::ifstream ifs("C:\\Temp\\stuff.txt");
+            std::string line;
+            while (std::getline(ifs, line))
+            {
+                std::stringstream ss(line);
+                std::string token;
+                ss >> token;
+                if (token == "COLOR")
+                {
+                    float r, g, b;
+                    ss >> r >> g >> b;
+                    for (auto& drawable : pGS->drawables)
+                    {
+                        if (drawable->GetSelected())
+                        {
+                            drawable->SetColor(glm::vec3(r / 255.f, g / 255.f, b / 255.f));
+                            drawable->SetSelected(false);
+                        }
+                    }
+
+                    break;
+                }
+            }
+            ifs.close();
         }
         if ((key == GLFW_KEY_F) && (action == GLFW_PRESS))
         {
@@ -135,59 +184,6 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
     {
     MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
 
-
-
-    int wx, wy;
-    glfwGetWindowSize(window, &wx, &wy);
-
-    ////float zf;
-    ////glReadPixels(xPos, yPos, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &zf);
-
-    glm::vec3 ndc = glm::vec3(xPos / wx, 1.f - yPos / wy, pGS->projection.m_Near) * 2.f - 1.f;
-    auto viewSpace = glm::inverse(pGS->projection.ProjectionMatrix()) * glm::vec4(ndc, 1.f);
-    auto worldSpaceNear = glm::inverse(pGS->camera.ViewMatrix()) * glm::vec4(viewSpace);
-
-    glfwSetWindowTitle(window, std::format("X{} Y{} Z{}", worldSpaceNear.x, worldSpaceNear.y, worldSpaceNear.z).c_str());
-
-    ndc = glm::vec3(xPos / wx, 1.f - yPos / wy, pGS->projection.m_Far) * 2.f - 1.f;
-    viewSpace = glm::inverse(pGS->projection.ProjectionMatrix()) * glm::vec4(ndc, 1.f);
-    auto worldSpaceFar = glm::inverse(pGS->camera.ViewMatrix()) * glm::vec4(viewSpace);
-
-
-    for (int i = 0; i < pGS->drawables.size(); ++i)
-    {
-        float x0 = std::numeric_limits<float>::max();
-        float y0 = std::numeric_limits<float>::max();
-        float z0 = std::numeric_limits<float>::max();
-        float x1 = std::numeric_limits<float>::lowest();
-        float y1 = std::numeric_limits<float>::lowest();
-        float z1 = std::numeric_limits<float>::lowest();
-        const auto& drawable = pGS->drawables[i];
-        const auto& boundingBox = drawable->BoundingBox();
-        for (int j = 0; j < boundingBox.size(); ++j)
-        {
-            glm::vec3 ptWorldSpace = drawable->ModelMatrix() * glm::vec4(boundingBox[j], 1.f);
-            x0 = std::min(x0, ptWorldSpace.x);
-            y0 = std::min(y0, ptWorldSpace.y);
-            x1 = std::max(x1, ptWorldSpace.x);
-            y1 = std::max(y1, ptWorldSpace.y);
-            z0 = std::min(z0, ptWorldSpace.z);
-            z1 = std::max(z1, ptWorldSpace.z);
-        }
-
-        gte::Vector3<float> bboxMin({ x0, y0, z0 });
-        gte::Vector3<float> bboxMax({ x1, y1, z1 });
-
-        gte::Line3<float> line(ToGteVector3(worldSpaceNear), ToGteVector3(glm::normalize(worldSpaceFar - worldSpaceNear)));
-        gte::AlignedBox3<float> box(bboxMin, bboxMax);
-
-        gte::TIQuery<float, gte::Line3<float>, gte::AlignedBox3<float> > tiq;
-        if (tiq(line, box).intersect)
-            pGS->drawables[i]->SetHover(true);
-        else
-            pGS->drawables[i]->SetHover(false);
-    }
-
     //auto finalMatrix = glm::inverse(pGS->projection.ProjectionMatrix() * pGS->camera.ViewMatrix());
     //auto wPos = finalMatrix * glm::vec4(ndc, 1.f);
     //auto wPos3 = glm::vec3(wPos)/wPos.w;
@@ -213,7 +209,7 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
 
         pGS->projection.Pan (cursorDx, cursorDy);
     }
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
+    else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE))
     {
         float angleX = cursorDx * 2.f * glm::pi<float>() / pGS->windowWidth;
         float angleY = cursorDy * 2.f * glm::pi<float>() / pGS->windowHeight;
@@ -221,7 +217,100 @@ auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double y
         pGS->camera.DoArcballRotation(angleX, angleY);
         pGS->projection.ZoomFit(pGS, pGS->drawables, pGS->camera.ViewMatrix(), true);
 	}
+    else
+    {
+        int wx, wy;
+        glfwGetWindowSize(window, &wx, &wy);
+
+        glm::vec3 ndc = glm::vec3(xPos / wx, 1.f - yPos / wy, pGS->projection.m_Near) * 2.f - 1.f;
+        auto viewSpace = glm::inverse(pGS->projection.ProjectionMatrix()) * glm::vec4(ndc, 1.f);
+        auto worldSpaceNear = glm::inverse(pGS->camera.ViewMatrix()) * glm::vec4(viewSpace);
+
+        glfwSetWindowTitle(window, std::format("X{} Y{} Z{}", worldSpaceNear.x, worldSpaceNear.y, worldSpaceNear.z).c_str());
+
+        ndc = glm::vec3(xPos / wx, 1.f - yPos / wy, pGS->projection.m_Far) * 2.f - 1.f;
+        viewSpace = glm::inverse(pGS->projection.ProjectionMatrix()) * glm::vec4(ndc, 1.f);
+        auto worldSpaceFar = glm::inverse(pGS->camera.ViewMatrix()) * glm::vec4(viewSpace);
+
+        int minIndex = pGS->drawables.size();
+        double minParm = std::numeric_limits<double>::max();
+        for (int i = 0; i < pGS->drawables.size(); ++i)
+        {
+            pGS->drawables[i]->SetHover(false);
+
+            float x0 = std::numeric_limits<float>::max();
+            float y0 = std::numeric_limits<float>::max();
+            float z0 = std::numeric_limits<float>::max();
+            float x1 = std::numeric_limits<float>::lowest();
+            float y1 = std::numeric_limits<float>::lowest();
+            float z1 = std::numeric_limits<float>::lowest();
+            const auto& drawable = pGS->drawables[i];
+            const auto& boundingBox = drawable->BoundingBox();
+            for (int j = 0; j < boundingBox.size(); ++j)
+            {
+                glm::vec3 ptWorldSpace = drawable->ModelMatrix() * glm::vec4(boundingBox[j], 1.f);
+                x0 = std::min(x0, ptWorldSpace.x);
+                y0 = std::min(y0, ptWorldSpace.y);
+                x1 = std::max(x1, ptWorldSpace.x);
+                y1 = std::max(y1, ptWorldSpace.y);
+                z0 = std::min(z0, ptWorldSpace.z);
+                z1 = std::max(z1, ptWorldSpace.z);
+            }
+
+            gte::Vector3<float> bboxMin({ x0, y0, z0 });
+            gte::Vector3<float> bboxMax({ x1, y1, z1 });
+
+            gte::Line3<float> line(ToGteVector3(worldSpaceNear), ToGteVector3(glm::normalize(worldSpaceFar - worldSpaceNear)));
+            gte::AlignedBox3<float> box(bboxMin, bboxMax);
+
+            gte::FIQuery<float, gte::Line3<float>, gte::AlignedBox3<float> > fiq;
+            auto fiqResult = fiq(line, box);
+            if (fiqResult.intersect)
+            {
+                if (pGS->drawables[i]->GetType() == MC_OpenGL::DrawableType::Triangles)
+                {
+                    MC_OpenGL::Triangles* stl = (MC_OpenGL::Triangles*)(pGS->drawables[i]);
+                    const std::vector<gte::Triangle3<float> > triangles = stl->GetTriangles();
+                    for (int j = 0; j < triangles.size(); ++j)
+                    {
+                        gte::FIQuery<float, gte::Line3<float>, gte::Triangle3<float> > fiqTriangle;
+                        gte::FIQuery<float, gte::Line3<float>, gte::Triangle3<float> >::Result fiqTriangleResult = fiqTriangle(line, triangles[j]);
+                        if ((fiqTriangleResult.intersect)/* && (fiqTriangleResult.parameter < minParm)*/)
+                        {
+                            minParm = fiqResult.parameter[0];
+                            minIndex = i;
+                        }
+                    }
+                }
+                else if (fiqResult.parameter[0] < minParm)
+                {
+                    minParm = fiqResult.parameter[0];
+                    minIndex = i;
+                }
+
+            }
+        }
+
+        if (minIndex < pGS->drawables.size())
+            pGS->drawables[minIndex]->SetHover(true);
+    }
 }
+
+
+auto MC_OpenGL::GlfwCallbackMouseButton(GLFWwindow* window, int button, int action, int mods) -> void
+{
+    MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        for (int i = 0; i < pGS->drawables.size(); ++i)
+        {
+            if (pGS->drawables[i]->GetHover())
+                pGS->drawables[i]->SetSelected(true);
+        }
+    }
+
+}
+
 
 auto MC_OpenGL::GlfwCallbackScroll(GLFWwindow* window, double xoffset, double yoffset) -> void
 {
