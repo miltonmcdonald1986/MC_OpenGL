@@ -9,7 +9,7 @@ MC_OpenGL::ProjectionOrthographic::ProjectionOrthographic()
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const MC_OpenGL::GlobalState* pGS, const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void
+auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const MC_OpenGL::Camera &camera, const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void
 {
 	float x0 = std::numeric_limits<float>::max();
 	float y0 = std::numeric_limits<float>::max();
@@ -41,8 +41,8 @@ auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const MC_OpenGL::GlobalState*
 	float dy = m_Top - m_Bottom;
 
 	// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
-	float zNear = (pGS->camera.ViewMatrix() * glm::vec4(pGS->camera.m_Eye, 1.f)).z - z1 - 1.f;
-	float zFar = (pGS->camera.ViewMatrix() * glm::vec4(pGS->camera.m_Eye, 1.f)).z - z0 + 1.f;
+	float zNear = (camera.ViewMatrix() * glm::vec4(camera.m_Eye, 1.f)).z - z1 - 1.f;
+	float zFar = (camera.ViewMatrix() * glm::vec4(camera.m_Eye, 1.f)).z - z0 + 1.f;
 
 	int windowWidth;
 	int windowHeight;
@@ -50,6 +50,42 @@ auto MC_OpenGL::ProjectionOrthographic::AutoCenter(const MC_OpenGL::GlobalState*
 
 	UpdateProjectionMatrix((float)windowWidth / (float)windowHeight, cx, cy, dx, dy, zNear, zFar);
 }
+
+
+auto MC_OpenGL::ProjectionOrthographic::GetBottom () -> double
+	{
+	return m_Bottom;
+	}
+
+
+auto MC_OpenGL::ProjectionOrthographic::GetFar () -> double
+	{
+	return m_Far;
+	}
+
+
+auto MC_OpenGL::ProjectionOrthographic::GetLeft () -> double
+	{
+	return m_Left;
+	}
+
+
+auto MC_OpenGL::ProjectionOrthographic::GetNear () -> double
+	{
+	return m_Near;
+	}
+
+
+auto MC_OpenGL::ProjectionOrthographic::GetRight () -> double
+	{
+	return m_Right;
+	}
+
+
+auto MC_OpenGL::ProjectionOrthographic::GetTop () -> double
+	{
+	return m_Top;
+	}
 
 
 auto MC_OpenGL::ProjectionOrthographic::Pan(float cursorDx, float cursorDy) -> void
@@ -130,7 +166,7 @@ auto MC_OpenGL::ProjectionOrthographic::UpdateProjectionMatrix(float aspectRatio
 }
 
 
-auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const MC_OpenGL::GlobalState* pGS, const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly) -> void
+auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const MC_OpenGL::Camera &camera, const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly) -> void
 {
 	float x0 = std::numeric_limits<float>::max();
 	float y0 = std::numeric_limits<float>::max();
@@ -167,8 +203,8 @@ auto MC_OpenGL::ProjectionOrthographic::ZoomFit(const MC_OpenGL::GlobalState* pG
 	dy *= 1.1f;
 
 	// The z-axis in ortho projection is reversed from the values we just calculated (right-hand vs left-hand thing)
-	float zNear = (pGS->camera.ViewMatrix()*glm::vec4(pGS->camera.m_Eye, 1.f)).z - z1 - 1.f;
-	float zFar = (pGS->camera.ViewMatrix()*glm::vec4(pGS->camera.m_Eye, 1.f)).z - z0 + 1.f;
+	float zNear = (camera.ViewMatrix()*glm::vec4(camera.m_Eye, 1.f)).z - z1 - 1.f;
+	float zFar = (camera.ViewMatrix()*glm::vec4(camera.m_Eye, 1.f)).z - z0 + 1.f;
 
 	int windowWidth;
 	int windowHeight;

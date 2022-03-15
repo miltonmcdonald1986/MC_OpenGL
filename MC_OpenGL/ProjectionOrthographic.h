@@ -10,6 +10,7 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 
+#include "Camera.h"
 #include "Drawable.h"
 
 
@@ -25,15 +26,21 @@ namespace MC_OpenGL
 	public:
 		ProjectionOrthographic();
 
-		auto AutoCenter(const MC_OpenGL::GlobalState* pGS, const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void;
+		auto AutoCenter(const MC_OpenGL::Camera &camera, const std::vector<Drawable*>& drawables, const glm::mat4& viewMatrix) -> void;
+		auto GetBottom () -> double;
+		auto GetFar () -> double;
+		auto GetLeft () -> double;
+		auto GetNear () -> double;
+		auto GetRight () -> double;
+		auto GetTop () -> double;
 		auto Pan(float cursorDx, float cursorDy) -> void;
 		auto ProjectionMatrix () const -> glm::mat4;
 		auto Resize(float oldWidth, float oldHeight, float newWidth, float newHeight) -> void;
 		auto SetWindow (GLFWwindow *window) -> void;
-		auto ZoomFit(const MC_OpenGL::GlobalState *pGS, const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly = false) -> void;
+		auto ZoomFit(const MC_OpenGL::Camera &camera, const std::vector<Drawable *> &drawables, const glm::mat4 &viewMatrix, bool fitZOnly = false) -> void;
 		auto ZoomInOutToCursor(float offset) -> void;
 
-	//private:
+	private:
 		auto UpdateProjectionMatrix(float zNear, float zFar) -> void;
 		auto UpdateProjectionMatrix(float aspectRatio, float cx, float cy, float dx, float dy, float zNear, float zFar) -> void;
 		auto ZoomInOut(float offset) -> void;

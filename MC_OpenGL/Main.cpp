@@ -197,14 +197,14 @@ int main()
 
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
-	//for (int i = 0; i < 10; ++i)
-	//{
-	//	pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
-	//	pGS->drawables.back()->SetColor(glm::vec3(0.5f, 0.5f, 1.f));
-	//}
-	pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
+	for (int i = 0; i < 10; ++i)
+	{
+		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
+		pGS->drawables.back()->SetColor(glm::vec3(0.5f, 0.5f, 1.f));
+	}
+	//pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
 	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
-	pGS->projection.ZoomFit(pGS.get(), pGS->drawables, pGS->camera.ViewMatrix());
+	pGS->projection.ZoomFit(pGS->camera, pGS->drawables, pGS->camera.ViewMatrix());
 
 
 	// END TEXTURE STUFF
@@ -231,9 +231,9 @@ int main()
 		//pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
 
 		//shaderSolidColor.SetVec3("lightPos", lightPos);
-		shaderSolidColor.SetVec3("viewPos", glm::vec3(0.5f*(pGS->projection.m_Right + pGS->projection.m_Left), 0.5f * (pGS->projection.m_Top + pGS->projection.m_Bottom), 22.f/*abs(pGS->projection.m_Near)*/));
+		shaderSolidColor.SetVec3("viewPos", glm::vec3(0.5f*(pGS->projection.GetRight() + pGS->projection.GetLeft()), 0.5f * (pGS->projection.GetTop() + pGS->projection.GetBottom()), 22.f/*abs(pGS->projection.m_Near)*/));
 
-		glViewport(0, 0, pGS->windowWidth, pGS->windowHeight);
+		glViewport(0, 0, (GLsizei)pGS->windowWidth, (GLsizei)pGS->windowHeight);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
