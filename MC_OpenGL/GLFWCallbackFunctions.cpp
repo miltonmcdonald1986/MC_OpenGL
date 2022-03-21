@@ -22,6 +22,18 @@ namespace {
 auto ToGteVector3 (const glm::vec3 &glmVector) -> gte::Vector3<float>;
 
 
+auto ArcballRotate(GLFWwindow* window, float dx, float dy) -> void
+{
+	MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+
+	float angleX = dx * 2.f * glm::pi<float>() / pGS->windowWidth;
+	float angleY = dy * 2.f * glm::pi<float>() / pGS->windowHeight;
+
+	pGS->camera.DoArcballRotation(angleX, angleY);
+	pGS->projection.ZoomFit(pGS->camera, pGS->drawables, pGS->camera.ViewMatrix(), true);
+}
+
+
 auto CursorZoom (GLFWwindow *window, double offset) -> void
 	{
 	MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
@@ -127,6 +139,13 @@ auto Hover (GLFWwindow *window, double xPos, double yPos) -> void
 	}
 
 
+auto Pan(GLFWwindow* window, float dx, float dy) -> void
+{
+	MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+	pGS->projection.Pan(dx, dy);
+}
+
+
 auto Select (GLFWwindow *window) -> void
 	{
 	MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
@@ -142,6 +161,18 @@ auto ToGteVector3 (const glm::vec3 &glmVector) -> gte::Vector3<float>
 	{
 	return gte::Vector3<float> ({ glmVector.x, glmVector.y, glmVector.z });
 	}
+
+
+auto UpdateCursorPosInfo(GLFWwindow* window, double xNew, double yNew) -> void
+{
+	MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
+
+	pGS->cursorPosXPrev = pGS->cursorPosX;
+	pGS->cursorPosYPrev = pGS->cursorPosY;
+
+	pGS->cursorPosX = xNew;
+	pGS->cursorPosY = yNew;
+}
 
 
 auto WindowIsMinimized (int width, int height) -> bool
@@ -278,6 +309,7 @@ auto MC_OpenGL::GlfwCallbackKey (GLFWwindow *window, int key, int scancode, int 
 		}
 	}
 
+
 auto MC_OpenGL::GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> void
 	{
 	MC_OpenGL::GlobalState *globalState = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
@@ -290,41 +322,21 @@ auto MC_OpenGL::GlfwCallbackCursorEnter (GLFWwindow *window, int entered) -> voi
 	globalState->cursorPosYPrev = yPos;
 	}
 
-auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xPos, double yPos) -> void
+
+auto MC_OpenGL::GlfwCallbackCursorPos (GLFWwindow *window, double xpos, double ypos) -> void
 	{
-	MC_OpenGL::GlobalState *pGS = reinterpret_cast<MC_OpenGL::GlobalState *>(glfwGetWindowUserPointer (window));
+	UpdateCursorPosInfo(window, xpos, ypos);
 
-	pGS->cursorPosXPrev = pGS->cursorPosX;
-	pGS->cursorPosYPrev = pGS->cursorPosY;
-
-	pGS->cursorPosX = xPos;
-	pGS->cursorPosY = yPos;
-
+	MC_OpenGL::GlobalState* pGS = reinterpret_cast<MC_OpenGL::GlobalState*>(glfwGetWindowUserPointer(window));
 	float cursorDx = static_cast<float>(pGS->cursorPosX - pGS->cursorPosXPrev);
 	float cursorDy = static_cast<float>(pGS->cursorPosY - pGS->cursorPosYPrev);
-	if (glfwGetMouseButton (window, GLFW_MOUSE_BUTTON_LEFT))
-		{
-		float cursorDx = static_cast<float>(pGS->cursorPosX - pGS->cursorPosXPrev);
-		float cursorDy = static_cast<float>(pGS->cursorPosY - pGS->cursorPosYPrev);
 
-		int windowWidth;
-		int windowHeight;
-		glfwGetWindowSize (window, &windowWidth, &windowHeight);
-
-		pGS->projection.Pan (cursorDx, cursorDy);
-		}
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT))
+		Pan(window, cursorDx, cursorDy);
 	else if (glfwGetMouseButton (window, GLFW_MOUSE_BUTTON_MIDDLE))
-		{
-		float angleX = cursorDx * 2.f * glm::pi<float> () / pGS->windowWidth;
-		float angleY = cursorDy * 2.f * glm::pi<float> () / pGS->windowHeight;
-
-		pGS->camera.DoArcballRotation (angleX, angleY);
-		pGS->projection.ZoomFit (pGS->camera, pGS->drawables, pGS->camera.ViewMatrix (), true);
-		}
+		ArcballRotate(window, cursorDx, cursorDy);
 	else
-		{
-		Hover (window, xPos, yPos);
-		}
+		Hover (window, xpos, ypos);
 	}
 
 
