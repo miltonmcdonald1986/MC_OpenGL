@@ -55,7 +55,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\lib\wxWidgets-3.0.5\include\msvc;..\lib\wxWidgets-3.0.5\include;..\lib\glm;..\lib\glfw-3.3.6\include;..\lib\glad\include;..\lib\GTE;..\lib\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MCOPENGL3RDPARTYLIB)\wxWidgets-3.0.5\include\msvc;$(MCOPENGL3RDPARTYLIB)\wxWidgets-3.0.5\include;$(MCOPENGL3RDPARTYLIB)\glm;$(MCOPENGL3RDPARTYLIB)\glfw-3.3.6\include;$(MCOPENGL3RDPARTYLIB)\glad\include;$(MCOPENGL3RDPARTYLIB)\GTE;$(MCOPENGL3RDPARTYLIB)\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -73,7 +73,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\lib\wxWidgets-3.0.5\include\msvc;..\lib\wxWidgets-3.0.5\include;..\lib\glm;..\lib\glfw-3.3.6\include;..\lib\glad\include;..\lib\GTE;..\lib\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MCOPENGL3RDPARTYLIB)\wxWidgets-3.0.5\include\msvc;$(MCOPENGL3RDPARTYLIB)\wxWidgets-3.0.5\include;$(MCOPENGL3RDPARTYLIB)\glm;$(MCOPENGL3RDPARTYLIB)\glfw-3.3.6\include;$(MCOPENGL3RDPARTYLIB)\glad\include;$(MCOPENGL3RDPARTYLIB)\GTE;$(MCOPENGL3RDPARTYLIB)\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
