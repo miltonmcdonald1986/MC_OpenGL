@@ -22,7 +22,7 @@ class Shader
 			}
 
 		Shader (const std::string &vsFilename, const std::string &fsFilename)
-			: m_ErrorCode (MC_OpenGL::ErrorCode::NO_ERROR)
+			: m_ErrorCode (MC_OpenGL::ErrorCode::NONE)
 			{
 			std::ifstream ifs (vsFilename);
 			std::string line;
@@ -94,7 +94,7 @@ class Shader
 
 		operator bool () const
 			{
-			return m_ErrorCode == MC_OpenGL::ErrorCode::NO_ERROR;
+			return m_ErrorCode == MC_OpenGL::ErrorCode::NONE;
 			}
 
 		auto GetProgramId () const
@@ -124,7 +124,7 @@ class Shader
 
 	private:
 		GLuint      m_Id = 0;
-		ErrorCode	m_ErrorCode = ErrorCode::NO_ERROR;
+		ErrorCode	m_ErrorCode = ErrorCode::NONE;
 		std::string m_InfoLog = "";
 	};
 

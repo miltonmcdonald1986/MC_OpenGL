@@ -18,6 +18,8 @@
 #include <Mathematics/Triangle.h>
 #include <Mathematics/Vector3.h>
 
+#include <Windows.h>
+
 //#define STB_IMAGE_IMPLEMENTATION
 //#include <stb_image.h>
 
@@ -161,166 +163,166 @@ auto GLFWInit(GLFWwindow*& window, MC_OpenGL::GlobalState* pGS) -> MC_OpenGL::Er
 	glfwSetMouseButtonCallback(window, MC_OpenGL::GlfwCallbackMouseButton);
 	glfwSetWindowUserPointer(window, reinterpret_cast<void*>(pGS));
 
-	return MC_OpenGL::ErrorCode::NO_ERROR;
+	return MC_OpenGL::ErrorCode::NONE;
 }
 
 
-//int main()
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+	pGS = std::make_unique<MC_OpenGL::GlobalState>();
+
+	GLFWwindow* window = nullptr;
+	MC_OpenGL::ErrorCode errorCode = GLFWInit(window, pGS.get());
+	pGS->projection.SetWindow(window);
+
+	switch (errorCode)
+	{
+	case MC_OpenGL::ErrorCode::NONE:
+		if (window == nullptr)
+			return static_cast<int>(MC_OpenGL::ErrorCode::ERROR_GLFW_WINDOW_IS_NULL);
+		break;
+	default:
+		return static_cast<int>(errorCode);
+	}
+
+	glEnable(GL_DEPTH_TEST);
+
+
+	MC_OpenGL::InitDrawables();
+
+	MC_OpenGL::Shader shaderAllWhite(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsAllWhite.glsl)");
+
+	MC_OpenGL::Shader shaderSolidColor(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicLightColor.glsl)");
+	glUseProgram(shaderSolidColor.GetProgramId());
+	shaderSolidColor.SetVec3("lightColor", glm::vec3(1.f, 1.f, 1.f));
+	shaderSolidColor.SetVec3("objectColor", glm::vec3(0.5f, 0.5f, 1.f));
+
+	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
+	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
+	for (int i = 0; i < 10; ++i)
+	{
+		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
+		pGS->drawables.back()->SetColor(glm::vec3(0.5f, 0.5f, 1.f));
+	}
+	//pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
+	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
+	pGS->projection.ZoomFit(pGS->camera, pGS->drawables, pGS->camera.ViewMatrix());
+
+
+	// END TEXTURE STUFF
+
+	glfwGetCursorPos(window, &pGS->cursorPosX, &pGS->cursorPosY);
+
+	MC_OpenGL::DemoTriangle demoTriangle;
+	//MC_OpenGL::Triangles triangles("C:\\cncm\\ncfiles\\LT1 090 No Plate.stl");
+
+	glm::vec3 centroid(0.f, 0.f, 0.f);
+	for (int i = 1; i < 10; ++i)
+	{
+		centroid += MC_OpenGL::cubePositions[i];
+	}
+	centroid /= 9.f;
+
+	// Game loop
+	while (!glfwWindowShouldClose(window))
+	{
+		//auto lightPos = glm::vec3(centroid.x + 6.f * cosf((float)glfwGetTime()), centroid.y + 6.f * sinf((float)glfwGetTime()), -2.f);
+		//glm::mat4 lightModel(1.f);
+		//lightModel = glm::translate(lightModel, lightPos);
+		//pGS->drawables[0]->SetModel(lightModel);
+		//pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
+
+		//shaderSolidColor.SetVec3("lightPos", lightPos);
+		shaderSolidColor.SetVec3("viewPos", glm::vec3(0.5f*(pGS->projection.GetRight() + pGS->projection.GetLeft()), 0.5f * (pGS->projection.GetTop() + pGS->projection.GetBottom()), 22.f/*abs(pGS->projection.m_Near)*/));
+
+		glViewport(0, 0, (GLsizei)pGS->windowWidth, (GLsizei)pGS->windowHeight);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		for (const MC_OpenGL::Drawable* drawable : pGS->drawables)
+		{
+			if (drawable->GetHover() || drawable->GetSelected())
+				shaderSolidColor.SetVec3("objectColor", glm::vec3(1.f, 1.f, 0.f));
+			else
+				shaderSolidColor.SetVec3("objectColor", drawable->GetColor());
+			drawable->Draw(pGS->camera.ViewMatrix(), pGS->projection.ProjectionMatrix());
+		}
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	// Clean up and exit
+	glfwTerminate();
+
+	return 0;
+}
+
+
+//// wxWidgets "Hello world" Program
+//// For compilers that support precompilation, includes "wx/wx.h".
+//#include <wx/wxprec.h>
+//#ifndef WX_PRECOMP
+//#include <wx/wx.h>
+//#endif
+//class MyApp : public wxApp
 //{
-//	pGS = std::make_unique<MC_OpenGL::GlobalState>();
-//
-//	GLFWwindow* window = nullptr;
-//	MC_OpenGL::ErrorCode errorCode = GLFWInit(window, pGS.get());
-//	pGS->projection.SetWindow(window);
-//
-//	switch (errorCode)
-//	{
-//	case MC_OpenGL::ErrorCode::NO_ERROR:
-//		if (window == nullptr)
-//			return static_cast<int>(MC_OpenGL::ErrorCode::ERROR_GLFW_WINDOW_IS_NULL);
-//		break;
-//	default:
-//		return static_cast<int>(errorCode);
-//	}
-//
-//	glEnable(GL_DEPTH_TEST);
-//
-//
-//	MC_OpenGL::InitDrawables();
-//
-//	MC_OpenGL::Shader shaderAllWhite(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsAllWhite.glsl)");
-//
-//	MC_OpenGL::Shader shaderSolidColor(R"(..\shaders\vsBasicCoordinateSystems.glsl)", R"(..\shaders\fsBasicLightColor.glsl)");
-//	glUseProgram(shaderSolidColor.GetProgramId());
-//	shaderSolidColor.SetVec3("lightColor", glm::vec3(1.f, 1.f, 1.f));
-//	shaderSolidColor.SetVec3("objectColor", glm::vec3(0.5f, 0.5f, 1.f));
-//
-//	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderAllWhite.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[0])));
-//	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
-//	for (int i = 0; i < 10; ++i)
-//	{
-//		pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[i])));
-//		pGS->drawables.back()->SetColor(glm::vec3(0.5f, 0.5f, 1.f));
-//	}
-//	//pGS->drawables.push_back(new MC_OpenGL::Triangles(shaderSolidColor, R"(C:\cncm\ncfiles\LT1 090 No Plate.stl)"));
-//	//pGS->drawables.push_back(new MC_OpenGL::Cube(shaderSolidColor.GetProgramId(), glm::translate(glm::mat4(1.f), MC_OpenGL::cubePositions[3])));
-//	pGS->projection.ZoomFit(pGS->camera, pGS->drawables, pGS->camera.ViewMatrix());
-//
-//
-//	// END TEXTURE STUFF
-//
-//	glfwGetCursorPos(window, &pGS->cursorPosX, &pGS->cursorPosY);
-//
-//	MC_OpenGL::DemoTriangle demoTriangle;
-//	//MC_OpenGL::Triangles triangles("C:\\cncm\\ncfiles\\LT1 090 No Plate.stl");
-//
-//	glm::vec3 centroid(0.f, 0.f, 0.f);
-//	for (int i = 1; i < 10; ++i)
-//	{
-//		centroid += MC_OpenGL::cubePositions[i];
-//	}
-//	centroid /= 9.f;
-//
-//	// Game loop
-//	while (!glfwWindowShouldClose(window))
-//	{
-//		//auto lightPos = glm::vec3(centroid.x + 6.f * cosf((float)glfwGetTime()), centroid.y + 6.f * sinf((float)glfwGetTime()), -2.f);
-//		//glm::mat4 lightModel(1.f);
-//		//lightModel = glm::translate(lightModel, lightPos);
-//		//pGS->drawables[0]->SetModel(lightModel);
-//		//pGS->projection.ZoomFit(pGS->drawables, pGS->camera.ViewMatrix(), true);
-//
-//		//shaderSolidColor.SetVec3("lightPos", lightPos);
-//		shaderSolidColor.SetVec3("viewPos", glm::vec3(0.5f*(pGS->projection.GetRight() + pGS->projection.GetLeft()), 0.5f * (pGS->projection.GetTop() + pGS->projection.GetBottom()), 22.f/*abs(pGS->projection.m_Near)*/));
-//
-//		glViewport(0, 0, (GLsizei)pGS->windowWidth, (GLsizei)pGS->windowHeight);
-//		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-//		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//		for (const MC_OpenGL::Drawable* drawable : pGS->drawables)
-//		{
-//			if (drawable->GetHover() || drawable->GetSelected())
-//				shaderSolidColor.SetVec3("objectColor", glm::vec3(1.f, 1.f, 0.f));
-//			else
-//				shaderSolidColor.SetVec3("objectColor", drawable->GetColor());
-//			drawable->Draw(pGS->camera.ViewMatrix(), pGS->projection.ProjectionMatrix());
-//		}
-//
-//		glfwSwapBuffers(window);
-//		glfwPollEvents();
-//	}
-//
-//	// Clean up and exit
-//	glfwTerminate();
-//
-//	return 0;
+//public:
+//	virtual bool OnInit();
+//};
+//class MyFrame : public wxFrame
+//{
+//public:
+//	MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+//private:
+//	void OnHello(wxCommandEvent& event);
+//	void OnExit(wxCommandEvent& event);
+//	void OnAbout(wxCommandEvent& event);
+//	wxDECLARE_EVENT_TABLE();
+//};
+//enum
+//{
+//	ID_Hello = 1
+//};
+//wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
+//EVT_MENU(ID_Hello, MyFrame::OnHello)
+//EVT_MENU(wxID_EXIT, MyFrame::OnExit)
+//EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
+//wxEND_EVENT_TABLE()
+//wxIMPLEMENT_APP(MyApp);
+//bool MyApp::OnInit()
+//{
+//	MyFrame* frame = new MyFrame("Hello World", wxPoint(50, 50), wxSize(450, 340));
+//	frame->Show(true);
+//	return true;
 //}
-
-
-// wxWidgets "Hello world" Program
-// For compilers that support precompilation, includes "wx/wx.h".
-#include <wx/wxprec.h>
-#ifndef WX_PRECOMP
-#include <wx/wx.h>
-#endif
-class MyApp : public wxApp
-{
-public:
-	virtual bool OnInit();
-};
-class MyFrame : public wxFrame
-{
-public:
-	MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
-private:
-	void OnHello(wxCommandEvent& event);
-	void OnExit(wxCommandEvent& event);
-	void OnAbout(wxCommandEvent& event);
-	wxDECLARE_EVENT_TABLE();
-};
-enum
-{
-	ID_Hello = 1
-};
-wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
-EVT_MENU(ID_Hello, MyFrame::OnHello)
-EVT_MENU(wxID_EXIT, MyFrame::OnExit)
-EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
-wxEND_EVENT_TABLE()
-wxIMPLEMENT_APP(MyApp);
-bool MyApp::OnInit()
-{
-	MyFrame* frame = new MyFrame("Hello World", wxPoint(50, 50), wxSize(450, 340));
-	frame->Show(true);
-	return true;
-}
-MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
-	: wxFrame(NULL, wxID_ANY, title, pos, size)
-{
-	wxMenu* menuFile = new wxMenu;
-	menuFile->Append(ID_Hello, "&Hello...\tCtrl-H",
-		"Help string shown in status bar for this menu item");
-	menuFile->AppendSeparator();
-	menuFile->Append(wxID_EXIT);
-	wxMenu* menuHelp = new wxMenu;
-	menuHelp->Append(wxID_ABOUT);
-	wxMenuBar* menuBar = new wxMenuBar;
-	menuBar->Append(menuFile, "&File");
-	menuBar->Append(menuHelp, "&Help");
-	SetMenuBar(menuBar);
-	CreateStatusBar();
-	SetStatusText("Welcome to wxWidgets!");
-}
-void MyFrame::OnExit(wxCommandEvent& event)
-{
-	Close(true);
-}
-void MyFrame::OnAbout(wxCommandEvent& event)
-{
-	wxMessageBox("This is a wxWidgets' Hello world sample",
-		"About Hello World", wxOK | wxICON_INFORMATION);
-}
-void MyFrame::OnHello(wxCommandEvent& event)
-{
-	wxLogMessage("Hello world from wxWidgets!");
-}
+//MyFrame::MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
+//	: wxFrame(NULL, wxID_ANY, title, pos, size)
+//{
+//	wxMenu* menuFile = new wxMenu;
+//	menuFile->Append(ID_Hello, "&Hello...\tCtrl-H",
+//		"Help string shown in status bar for this menu item");
+//	menuFile->AppendSeparator();
+//	menuFile->Append(wxID_EXIT);
+//	wxMenu* menuHelp = new wxMenu;
+//	menuHelp->Append(wxID_ABOUT);
+//	wxMenuBar* menuBar = new wxMenuBar;
+//	menuBar->Append(menuFile, "&File");
+//	menuBar->Append(menuHelp, "&Help");
+//	SetMenuBar(menuBar);
+//	CreateStatusBar();
+//	SetStatusText("Welcome to wxWidgets!");
+//}
+//void MyFrame::OnExit(wxCommandEvent& event)
+//{
+//	Close(true);
+//}
+//void MyFrame::OnAbout(wxCommandEvent& event)
+//{
+//	wxMessageBox("This is a wxWidgets' Hello world sample",
+//		"About Hello World", wxOK | wxICON_INFORMATION);
+//}
+//void MyFrame::OnHello(wxCommandEvent& event)
+//{
+//	wxLogMessage("Hello world from wxWidgets!");
+//}
